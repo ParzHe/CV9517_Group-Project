@@ -1,22 +1,10 @@
 # If you feels pip of conda is not efficient, you can use "uv pip" to install the following packages
 
-# Pytorch and CUDA dependencies
---extra-index-url=https://download.pytorch.org/whl/cu128 # Use the newest supported CUDA version, please update NVIDIA driver if necessary
-
-torch==2.7.1
-torchaudio==2.7.1
-torchvision==0.22.1
-
-# Lightning dependencies
-lightning==2.5.2
 
 # Other dependencies
+wandb
 gradio
 kagglehub
 opencv-python
 swanlab[dashboard]
 fastapi[standard]
-
-
-
-
