@@ -37,7 +37,16 @@ CV9517_Group-Project/
 
 If you do not have `conda` installed, you can install it from the [Anaconda website](https://www.anaconda.com/download).
 
-#### 2.2.1 Setup OpenMMLab Environment with Conda (for the most semantic segmentation)
+#### 2.2.1 Setup CVers Environment with Conda (for Pytorch Lightning, ADA-Net, and SAM2)
+
+- Create a `CVers` conda environment using the provided `environment.yaml` file:
+
+   ```shell
+   # in the root directory of the project
+   conda env create -f ./environment.yaml
+   ```
+
+#### 2.2.2 Setup OpenMMLab Environment with Conda (Another choice for semantic segmentation)
 
 - Create a `openmmlab` conda environment using the provided `environment.yaml` file:
 
@@ -68,15 +77,6 @@ If you do not have `conda` installed, you can install it from the [Anaconda webs
    # '-v' means verbose, or more output
    # '-e' means installing a project in editable mode,
    # thus any local modifications made to the code will take effect without reinstallation. 
-   ```
-
-#### 2.2.2 Setup CVers Environment with Conda (for Pytorch Lightning, ADA-Net, and SAM2)
-
-- Create a `CVers` conda environment using the provided `environment.yaml` file:
-
-   ```shell
-   # in the root directory of the project
-   conda env create -f ./environment.yaml
    ```
 
 ### 3. **Activate the environmen**
