@@ -1,10 +1,7 @@
 # If you feels pip of conda is not efficient, you can use "uv pip" to install the following packages
 
-# SAM2
--e git+https://github.com/facebookresearch/sam2.git
-
-# Model Libraries
-segmentation-models-pytorch
+# Open mmlab
+openmim
 
 # Other dependencies
 wandb
