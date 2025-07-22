@@ -107,6 +107,7 @@ Dev Environment:
 
 - **Option 1**: `openmmlab` . You can learn [MMSegmentation](https://mmsegmentation.readthedocs.io/) and use it to train U-Net as you wish.
 - **Option 2**: `CVers` . You can use the `pytorch_lightning` framework and [Segmentation Models PyTorch](https://smp.readthedocs.io/) to implement U-Net.
+- **Option 3**: Use the environment setting in the [GitHub repository](https://github.com/arbit3rr/UNet-AerialSegmentation).
 
 ### 3.2 ADA-Net ( Be responsible for Replication Experiment )
 
