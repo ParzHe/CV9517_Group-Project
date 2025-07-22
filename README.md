@@ -101,7 +101,7 @@ Environments for different tasks can be activated using the following commands:
 
 Person in Charge: To Be Determined
 
-Refer to [GitHub repository](https://github.com/arbit3rr/UNet-AerialSegmentation)
+Refer to [GitHub repository](https://github.com/arbit3rr/UNet-AerialSegmentation): "U-Net for Semantic Segmentation on Unbalanced Aerial Imagery"
 
 Dev Environment:
 
