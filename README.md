@@ -125,6 +125,7 @@ Refer to:
 1. The [GitHub repository](https://github.com/facebookresearch/sam2)
 2. [Enabling Meta’s SAM 2 model for Geospatial AI on satellite imagery](https://wherobots.com/blog/sam-2-model-geospatial-ai-satellite-imagery/)
 3. [axXiv paper](https://arxiv.org/abs/2503.07266): "Customized SAM 2 for Referring Remote Sensing Image Segmentation"
+4. [axXiv paper](https://arxiv.org/abs/2506.03114): "Zero-Shot Tree Detection and Segmentation from Aerial Forest Imagery"
 
 Dev Environment: `CVers` or other environments as needed. When create `CVers` the SAM2 package will be installed automatically.
 
