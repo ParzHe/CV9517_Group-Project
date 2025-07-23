@@ -99,7 +99,7 @@ Environments for different tasks can be activated using the following commands:
 
 ### 3.1 U-Net
 
-Person in Charge: To Be Determined
+Person in Charge: [Chencan Que（阙晨灿）](https://github.com/IkarosForever)
 
 Refer to [GitHub repository](https://github.com/arbit3rr/UNet-AerialSegmentation): "U-Net for Semantic Segmentation on Unbalanced Aerial Imagery"
 
@@ -111,7 +111,7 @@ Dev Environment:
 
 ### 3.2 ADA-Net ( Be responsible for Replication Experiment )
 
-Person in Charge: To Be Determined
+Person in Charge: [Bowei Cheng（程柏威）](https://github.com/Awzhcc)
 
 Refer to the paper [ADA-Net：ADA-Net: Attention-Guided Domain Adaptation Network with Contrastive Learning for Standing Dead Tree Segmentation Using Aerial Imagery](https://arxiv.org/abs/2504.04271) and the [GitHub repository](https://github.com/meteahishali/ADA-Net)
 
@@ -132,7 +132,7 @@ Dev Environment: `CVers` or other environments as needed. When create `CVers` th
 
 ### 3.4 SAM2-UNet
 
-Person in Charge: To Be Determined
+Person in Charge: [Zitong Wei（魏子童）](https://github.com/WIZ-ROC)
 
 Refer to the paper [SAM2-UNet: Segment Anything 2 Makes Strong Encoder for Natural and Medical Image Segmentation](https://arxiv.org/abs/2408.08870) and the [GitHub repository](https://github.com/WZH0120/SAM2-UNet)
 
@@ -140,7 +140,7 @@ Dev Environment: `CVers` or other environments as needed
 
 ### 3.5 SAM2-ADANet
 
-Person in Charge: To Be Determined
+Person in Charge: [Lintao He（何林涛）](https://github.com/https://github.com/ParzHe)
 
 This is a combination of SAM2 and ADA-Net, which is expected to achieve better performance than both methods. It is a new method proposed by our group. To be implemented.
 
