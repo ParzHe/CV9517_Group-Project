@@ -46,6 +46,20 @@ If you do not have `conda` installed, you can install it from the [Anaconda webs
    conda env create -f ./environment.yaml
    ```
 
+- Activate the `CVers` environment:
+
+   ```shell
+   conda activate CVers
+   ```
+
+- Install `sam2`:
+
+   ```shell
+   git clone https://github.com/facebookresearch/sam2.git && cd sam2
+
+   pip install -e .
+   ```
+
 #### 2.2.2 Setup OpenMMLab Environment with Conda (Another choice for semantic segmentation)
 
 - Create a `openmmlab` conda environment using the provided `environment.yaml` file:
