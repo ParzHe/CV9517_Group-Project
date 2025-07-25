@@ -1,12 +1,12 @@
 # utils.py
 import torch
 import torch.nn as nn
+import segmentation_models_pytorch as smp
 
 def iou_score(pred, target, eps=1e-6):
-    pred = (pred > 0.5).float()
-    inter= (pred * target).sum(dim=(1,2,3))
-    union= ((pred + target) >= 1).float().sum(dim=(1,2,3))
-    return ((inter + eps) / (union + eps)).mean()
+    tp, fp, fn, tn = smp.metrics.get_stats(pred, target, mode='binary', threshold=0.5)
+    iou_score = smp.metrics.iou_score(tp, fp, fn, tn, reduction='micro')
+    return iou_score
 
 def pixel_accuracy(pred, target, eps=1e-6):
     pred    = (pred > 0.5).float()

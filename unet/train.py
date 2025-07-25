@@ -6,7 +6,7 @@ from tqdm import tqdm
 import config
 from data_processing import make_dataloaders
 from model import UNet
-from utils import iou_score, BCEDiceLoss, pixel_accuracy
+from util import iou_score, BCEDiceLoss, pixel_accuracy
 
 def train_one_epoch(model, loader, criterion, optimizer):
     model.train()

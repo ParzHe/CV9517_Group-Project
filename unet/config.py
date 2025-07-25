@@ -1,9 +1,12 @@
 # config.py
 import os
+import sys
 import torch
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data import download_dataset
 
 # 数据路径
-DATA_DIR   = "data"
+DATA_DIR   = download_dataset()
 RGB_DIR    = os.path.join(DATA_DIR, "RGB_images")
 NRG_DIR    = os.path.join(DATA_DIR, "NRG_images")
 MASK_DIR   = os.path.join(DATA_DIR, "masks")

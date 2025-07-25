@@ -1,6 +1,7 @@
 # If you feels pip of conda is not efficient, you can use "uv pip" to install the following packages
 
 # Other dependencies
+torchmetrics==1.8.0
 wandb
 gradio
 kagglehub
