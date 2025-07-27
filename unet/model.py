@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class DoubleConv(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -53,3 +54,10 @@ class UNet(nn.Module):
         x  = self.dconv_up1(x)
         out= self.conv_last(x)
         return torch.sigmoid(out)
+
+def build_unet_model():
+    """
+    构造一个默认的 UNet 模型，支持 4 通道输入，1 通道输出。
+    可供 train.py 中直接调用。
+    """
+    return UNet(in_channels=4, out_channels=1)
