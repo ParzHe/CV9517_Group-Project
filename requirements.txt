@@ -1,6 +1,18 @@
 # If you feels pip of conda is not efficient, you can use "uv pip" to install the following packages
 
 # Other dependencies
+torchmetrics==1.8.0
+tensorboardx==2.6.4
+
+# Formatters
+ruff==0.12.5
+
+# albumentationsx
+albumentationsx==2.0.9
+
+
+appdirs==1.4.4
+
 wandb
 gradio
 kagglehub
