@@ -155,13 +155,16 @@ class SMPLightningModule(L.LightningModule):
             return optimizer
 
         if hasattr(self.trainer, 'max_epochs') and int(self.trainer.max_epochs) > 0:
-            scheduler = lr_scheduler.OneCycleLR(
-                optimizer,
-                max_lr=self.hparams.lr,
-                total_steps=self.trainer.estimated_stepping_batches,
-                pct_start=0.1,
+            scheduler = {
+                'scheduler': lr_scheduler.OneCycleLR(
+                    optimizer,
+                    max_lr=self.hparams.lr,
+                    total_steps=self.trainer.max_steps,
+                    pct_start=0.1,
                 anneal_strategy="cos",
-            )
+                ),
+                'interval': 'step', # 
+            }
             return [optimizer], [scheduler]
         else:
             return [optimizer]
