@@ -1,27 +1,20 @@
-import os
-
 import torch
 import lightning as L
 from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 
-class SMPLightningModule(L.LightningModule):
-    def __init__(self, arch, encoder_name, encoder_weights="imagenet", in_channels=4, out_classes=1, lr=1e-3, use_scheduler=True, **kwargs):
+class SegLitModule(L.LightningModule):
+    def __init__(self, model, lr=1e-3, use_scheduler=True, **kwargs):
         super().__init__()
-        self.save_hyperparameters()
-        
-        self.model = smp.create_model(
-            arch=self.hparams.arch,
-            encoder_name=self.hparams.encoder_name,
-            encoder_weights=self.hparams.encoder_weights,
-            in_channels=self.hparams.in_channels,
-            classes=self.hparams.out_classes,
-            encoder_depth=5,
-            **kwargs,
-        )
+        assert model is not None, "Model must be provided"
+
+        self.save_hyperparameters(ignore=["model"])
+
+        self.model = model
 
         # loss function
-        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+        lovasz_loss = smp.losses.LovaszLoss(smp.losses.BINARY_MODE, from_logits=True, per_image=True)
+        self.loss_fn = lovasz_loss
 
         # initialize step metics
         self.training_step_outputs = []
@@ -159,7 +152,7 @@ class SMPLightningModule(L.LightningModule):
                 'scheduler': lr_scheduler.OneCycleLR(
                     optimizer,
                     max_lr=self.hparams.lr,
-                    total_steps=self.trainer.max_steps,
+                    total_steps=self.trainer.max_steps if self.trainer.max_steps > 0 else self.trainer.estimated_stepping_batches,
                     pct_start=0.1,
                 anneal_strategy="cos",
                 ),
@@ -168,4 +161,3 @@ class SMPLightningModule(L.LightningModule):
             return [optimizer], [scheduler]
         else:
             return [optimizer]
-    
