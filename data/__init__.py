@@ -1,3 +1,5 @@
+# data/__init__.py
+
 from .datamodule import AerialDeadTreeSegDataModule
 from .dataset import AerialDeadTreeSegDataset
 from .transforms import SegmentationTransform

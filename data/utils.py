@@ -1,5 +1,9 @@
+# data/utils.py
+
 import kagglehub
 import os
+from rich import print
+from utils import paths
 
 def download_dataset(handle: str = "meteahishali/aerial-imagery-for-standing-dead-tree-segmentation") -> str:
     """Download the dataset from Kaggle.
@@ -9,8 +13,7 @@ def download_dataset(handle: str = "meteahishali/aerial-imagery-for-standing-dea
         str: Path to the downloaded dataset files.
     """
     
-    home_path = os.path.expanduser("~")
-    kaggle_datasets_dir = os.path.join(home_path, ".cache", "kagglehub", "datasets")
+    kaggle_datasets_dir = paths.kaggle_datasets_dir
     dataset_folder_dir = os.path.join(kaggle_datasets_dir, handle.split("/")[0], handle.split("/")[1], "versions", "1", )
 
     if os.path.exists(dataset_folder_dir):
