@@ -2,17 +2,23 @@ from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from .transforms import SegmentationTransform
+from rich import print
 
 class AerialDeadTreeSegDataset(Dataset):
-    def __init__(self, rgb_paths, nrg_paths, mask_paths, pattern="merged"):
+    def __init__(self, rgb_paths, nrg_paths, mask_paths, transform=None, modality="merged"):
         self.rgb_paths  = rgb_paths
         self.nrg_paths  = nrg_paths
         self.mask_paths = mask_paths
-        self.pattern    = pattern
+        self.transform  = transform
+        self.modality    = modality
         
-        if self.pattern not in ["rgb", "nrg", "merged"]:
-            print(f"[yellow]Warning: Unknown pattern '{self.pattern}'. Defaulting to 'merged'.[/yellow]")
-            self.pattern = "merged" # Default to merged if not specified
+        if self.transform is None:
+            print("[yellow]Warning: No transform provided. Using default SegmentationTransform.[/yellow]")
+            self.transform = SegmentationTransform(modality=modality)
+        
+        if self.modality not in ["rgb", "nrg", "merged"]:
+            print(f"[yellow]Warning: Unknown modality '{self.modality}'. Defaulting to 'merged'.[/yellow]")
+            self.modality = "merged" # Default to merged if not specified
 
         self._load_strategies = {
             "rgb": self._load_rgb,
@@ -27,10 +33,11 @@ class AerialDeadTreeSegDataset(Dataset):
         # Load mask
         mask = Image.open(self.mask_paths[idx]).convert("L")
         
-        # Load image based on the specified pattern
-        img = self._load_strategies[self.pattern](idx)
-        
-        
+        # Load image based on the specified modality
+        img = self._load_strategies[self.modality](idx)
+
+        img, mask = self.transform(img, mask)
+
         return {"image": img, "mask": mask}
         
     def _load_rgb(self, idx):
@@ -52,9 +59,9 @@ class AerialDeadTreeSegDataset(Dataset):
         return Image.fromarray(merged.astype(np.uint8))
     
     def get_mean_std(self):
-        """Get mean and std for normalization based on the pattern."""
+        """Get mean and std for normalization based on the modality."""
         
-        # Decide num of channels based on the pattern
+        # Decide num of channels based on the modality
         sample = self._load_strategies
         channels_num = np.array(sample).shape[2]
 
@@ -63,7 +70,7 @@ class AerialDeadTreeSegDataset(Dataset):
         pixel_ct = 0
         
         for i in range(len(self)):
-            img = self._load_strategies[self.pattern](i)
+            img = self._load_strategies[self.modality](i)
             arr = np.array(img, dtype=np.float32) / 255.0    # Normalize to [0, 1]
             h, w, _ = arr.shape
             arr_flat = arr.reshape(-1, channels_num)                    # (H*W)×C
