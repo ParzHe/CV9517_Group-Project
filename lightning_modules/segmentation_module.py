@@ -3,8 +3,14 @@ import lightning as L
 from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 
+TRAIN_STAGE = "train"
+VAL_STAGE = "val"
+TEST_STAGE = "test"
+
 class SegLitModule(L.LightningModule):
-    def __init__(self, model, lr=1e-3, use_scheduler=True, **kwargs):
+    def __init__(self, model, 
+                 loss = smp.losses.LovaszLoss(smp.losses.BINARY_MODE, from_logits=True, per_image=True),
+                 lr=1e-3, use_scheduler=True, **kwargs):
         super().__init__()
         assert model is not None, "Model must be provided"
 
@@ -13,8 +19,7 @@ class SegLitModule(L.LightningModule):
         self.model = model
 
         # loss function
-        lovasz_loss = smp.losses.LovaszLoss(smp.losses.BINARY_MODE, from_logits=True, per_image=True)
-        self.loss_fn = lovasz_loss
+        self.loss_fn = loss
 
         # initialize step metics
         self.training_step_outputs = []
@@ -53,7 +58,13 @@ class SegLitModule(L.LightningModule):
         loss = self.loss_fn(logits_mask, mask)
         
         # Log the loss
-        self.log(f"{stage}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        if stage == "train":
+            self.log(f"metrics/loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
+        elif stage == "val":
+            self.log(f"metrics/loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
+        else:
+            self.log(f"metrics/loss/{stage}", loss, on_step=False, on_epoch=False, prog_bar=False)
+        
 
         # Lets compute metrics for some threshold
         # first convert mask values to probabilities, then
@@ -101,42 +112,42 @@ class SegLitModule(L.LightningModule):
         accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="macro")
         
         metrics = {
-            f"{stage}_accuracy": accuracy,
-            f"{stage}_per_image_iou": per_image_iou,
-            f"{stage}_dataset_iou": dataset_iou,
+            f"metrics/accuracy/{stage}": accuracy,
+            f"metrics/per_image_iou/{stage}": per_image_iou,
+            f"metrics/dataset_iou/{stage}": dataset_iou,
         }
 
         self.log_dict(metrics, prog_bar=True)
 
     def training_step(self, batch, batch_idx):
-        train_loss_info = self.shared_step(batch, "train")
+        train_loss_info = self.shared_step(batch, TRAIN_STAGE)
         # append the metics of each step to the
         self.training_step_outputs.append(train_loss_info)
         return train_loss_info
 
     def on_train_epoch_end(self):
-        self.shared_epoch_end(self.training_step_outputs, "train")
+        self.shared_epoch_end(self.training_step_outputs, TRAIN_STAGE)
         # empty set output list
         self.training_step_outputs.clear()
         return
 
     def validation_step(self, batch, batch_idx):
-        valid_loss_info = self.shared_step(batch, "val")
+        valid_loss_info = self.shared_step(batch, VAL_STAGE)
         self.validation_step_outputs.append(valid_loss_info)
         return valid_loss_info
 
     def on_validation_epoch_end(self):
-        self.shared_epoch_end(self.validation_step_outputs, "val")
+        self.shared_epoch_end(self.validation_step_outputs, VAL_STAGE)
         self.validation_step_outputs.clear()
         return
 
     def test_step(self, batch, batch_idx):
-        test_loss_info = self.shared_step(batch, "test")
+        test_loss_info = self.shared_step(batch, TEST_STAGE)
         self.test_step_outputs.append(test_loss_info)
         return test_loss_info
 
     def on_test_epoch_end(self):
-        self.shared_epoch_end(self.test_step_outputs, "test")
+        self.shared_epoch_end(self.test_step_outputs, TEST_STAGE)
         # empty set output list
         self.test_step_outputs.clear()
         return
