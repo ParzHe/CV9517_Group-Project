@@ -52,6 +52,10 @@ class SegLitModule(L.LightningModule):
         mask = self.model(image)
         return mask
 
+    def on_fit_start(self):
+        example_input = torch.randn(1, 4, 256, 256)  # Example input tensor
+        self.logger.log_graph(model=self.model, example_input=example_input)
+
     def shared_step(self, batch, stage):
         image = batch["image"]
         mask = batch["mask"]
