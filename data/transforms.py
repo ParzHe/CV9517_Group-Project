@@ -30,13 +30,7 @@ class SegmentationTransform:
                 A.SmallestMaxSize(max_size=target_size[0] * 2, p=1.0),
                 A.CropNonEmptyMaskIfExists(height=target_size[0], width=target_size[1], p=1.0),
                 A.SquareSymmetry(p=1.0),  # Replaces Horizontal/Vertical Flips
-                A.MotionBlur(blur_limit=5, p=0.2),
-                A.ISONoise(
-                    color_shift=(0.005, 0.03),
-                    intensity=(0.02, 0.1),
-                    p=0.2
-                ),
-                A.RandomBrightnessContrast(p=0.2),
+                A.GaussNoise(std_range=(0.02, 0.06), mean_range=(0.01,0.03), p=0.3),
             ])
         else:
             transforms.extend([

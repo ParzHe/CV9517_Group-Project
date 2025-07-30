@@ -15,8 +15,8 @@ from rich import print
 import pandas as pd
 
 class AerialDeadTreeSegDataModule(LightningDataModule):
-    def __init__(self, val_split=0.1, test_split=0.2, seed=42, modality="rgb", 
-                 batch_size=32, num_workers=0, target_size=224, **kwargs):
+    def __init__(self, val_split=0.1, test_split=0.2, seed=42, modality="merged", 
+                 batch_size=32, num_workers=0, target_size=224):
         super().__init__()
         self.save_hyperparameters()
         
