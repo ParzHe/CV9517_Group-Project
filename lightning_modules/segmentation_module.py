@@ -9,22 +9,44 @@ TEST_STAGE = "test"
 
 class SegLitModule(L.LightningModule):
     def __init__(self, model, 
-                 loss = smp.losses.LovaszLoss(smp.losses.BINARY_MODE, from_logits=True, per_image=True),
+                 loss1 = smp.losses.JaccardLoss(mode='binary', from_logits=True),
+                 loss2 = smp.losses.FocalLoss(mode='binary'),
                  lr=1e-3, use_scheduler=True, **kwargs):
         super().__init__()
         assert model is not None, "Model must be provided"
 
-        self.save_hyperparameters(ignore=["model"])
+        self.save_hyperparameters(ignore=["model", "loss1", "loss2"])
 
         self.model = model
+        self.loss_fn1 = loss1
+        self.loss_fn2 = loss2
 
-        # loss function
-        self.loss_fn = loss
+        # Pre-create default loss to avoid repeated instantiation
+        self._default_loss = smp.losses.DiceLoss(mode='binary', from_logits=True)
+        
+        # Determine loss strategy once during initialization
+        if self.loss_fn1 is not None and self.loss_fn2 is not None:
+            self._loss_strategy = "combined"
+        elif self.loss_fn1 is not None:
+            self._loss_strategy = "single"
+        else:
+            self._loss_strategy = "default"
 
         # initialize step metics
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.test_step_outputs = []
+
+    def _loss_fn(self, logits_mask, mask):
+        """
+        Optimized loss function computation.
+        """
+        if self._loss_strategy == "combined":
+            return self.loss_fn1(logits_mask, mask) + self.loss_fn2(logits_mask, mask)
+        elif self._loss_strategy == "single":
+            return self.loss_fn1(logits_mask, mask)
+        else:
+            return self._default_loss(logits_mask, mask)
 
     def forward(self, image):
         mask = self.model(image)
@@ -55,15 +77,15 @@ class SegLitModule(L.LightningModule):
         logits_mask = self.forward(image)
 
         # Predicted mask contains logits, and loss_fn param `from_logits` is set to True
-        loss = self.loss_fn(logits_mask, mask)
+        loss = self._loss_fn(logits_mask, mask)
         
         # Log the loss
         if stage == "train":
-            self.log(f"metrics/loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
+            self.log(f"loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
         elif stage == "val":
-            self.log(f"metrics/loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
+            self.log(f"loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
         else:
-            self.log(f"metrics/loss/{stage}", loss, on_step=False, on_epoch=False, prog_bar=False)
+            self.log(f"loss/{stage}", loss, on_step=False, on_epoch=False, prog_bar=False)
         
 
         # Lets compute metrics for some threshold
@@ -112,12 +134,16 @@ class SegLitModule(L.LightningModule):
         accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="macro")
         
         metrics = {
-            f"metrics/accuracy/{stage}": accuracy,
-            f"metrics/per_image_iou/{stage}": per_image_iou,
-            f"metrics/dataset_iou/{stage}": dataset_iou,
+            f"accuracy/{stage}": accuracy,
+            f"per_image_iou/{stage}": per_image_iou,
+            f"dataset_iou/{stage}": dataset_iou,
         }
 
         self.log_dict(metrics, prog_bar=True)
+        
+        if stage == VAL_STAGE:
+            # log the per_image_iou for model name
+            self.log(f"per_image_iou_{stage}", per_image_iou, on_step=False, on_epoch=True, prog_bar=False)
 
     def training_step(self, batch, batch_idx):
         train_loss_info = self.shared_step(batch, TRAIN_STAGE)

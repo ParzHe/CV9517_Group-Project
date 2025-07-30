@@ -69,6 +69,8 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
             print(f"[green]Using existing split: {csv_path}[/green]")
             df = pd.read_csv(csv_path)
         else:
+            if not os.path.exists(paths.data_split_dir):
+                os.makedirs(paths.data_split_dir)
             print(f"[yellow]Creating new split: {csv_path}[/yellow]")
             
             # Generate random indices
@@ -116,8 +118,7 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
         rgb_paths, nrg_paths, mask_paths = paths_tuple
         transform = SegmentationTransform(
             target_size=self.hparams.target_size,
-            in_channels=self.in_channels,
-            mode=mode
+            mode=mode,
         )
         return AerialDeadTreeSegDataset(rgb_paths, nrg_paths, mask_paths, transform, self.hparams.modality)
 

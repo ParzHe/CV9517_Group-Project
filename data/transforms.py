@@ -4,7 +4,7 @@ import albumentations as A
 import numpy as np
 
 def identity_image(x, **kwargs):
-        return x
+        return x.astype('float32')
 
 def binarize_mask(x, **kwargs):
     return (x > 0.5).astype('float32')
@@ -14,8 +14,6 @@ class SegmentationTransform:
             target_size=224, 
             mode="train", 
             modality="rgb",
-            mean=(0.485, 0.456, 0.406),
-            std=(0.229, 0.224, 0.225)
         ):
         
         assert mode in ["train", "val", "test"], "Mode must be one of 'train', 'val', or 'test'."
@@ -29,8 +27,8 @@ class SegmentationTransform:
 
         if mode == "train":
             transforms.extend([
-                A.SmallestMaxSize(max_size=target_size[0] * 2, p=0.8),
-                A.CropNonEmptyMaskIfExists(height=target_size[0], width=target_size[1], p=0.8),
+                A.SmallestMaxSize(max_size=target_size[0] * 2, p=1.0),
+                A.CropNonEmptyMaskIfExists(height=target_size[0], width=target_size[1], p=1.0),
                 A.SquareSymmetry(p=1.0),  # Replaces Horizontal/Vertical Flips
                 A.MotionBlur(blur_limit=5, p=0.2),
                 A.ISONoise(
@@ -42,12 +40,20 @@ class SegmentationTransform:
             ])
         else:
             transforms.extend([
-                A.LongestMaxSize(max_size=target_size[0], p=1.0),
-                A.PadIfNeeded(min_height=target_size[0], min_width=target_size[1], p=1.0),
+                A.SmallestMaxSize(max_size=target_size[0] * 2, p=1.0),
+                A.CenterCrop(height=target_size[0] * 2, width=target_size[1] * 2, p=1.0),
             ])
-        
+            
+        if modality == "merged":
+            transforms.append(
+                A.Normalize(mean=(0.485, 0.456, 0.406, 0.5), std=(0.229, 0.224, 0.225, 0.2), p=1.0)
+            )
+        else:
+            transforms.append(
+                A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), p=1.0)
+            )
+
         transforms.extend([
-            A.Normalize(mean=mean, std=std),
             A.Lambda(
                 image=identity_image,
                 mask=binarize_mask,
@@ -56,7 +62,7 @@ class SegmentationTransform:
         ])
         
         self.transform = A.Compose(transforms)
-    
+
     def __call__(self, img, mask):
         transformed = self.transform(image=np.array(img), mask=np.array(mask))
         img, mask = transformed['image'], transformed['mask']
