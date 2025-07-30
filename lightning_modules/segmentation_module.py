@@ -1,36 +1,60 @@
-import os
-
 import torch
 import lightning as L
 from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 
-class SMPLightningModule(L.LightningModule):
-    def __init__(self, arch, encoder_name, encoder_weights="imagenet", in_channels=4, out_classes=1, lr=1e-3, use_scheduler=True, **kwargs):
-        super().__init__()
-        self.save_hyperparameters()
-        
-        self.model = smp.create_model(
-            arch=self.hparams.arch,
-            encoder_name=self.hparams.encoder_name,
-            encoder_weights=self.hparams.encoder_weights,
-            in_channels=self.hparams.in_channels,
-            classes=self.hparams.out_classes,
-            encoder_depth=5,
-            **kwargs,
-        )
+TRAIN_STAGE = "train"
+VAL_STAGE = "val"
+TEST_STAGE = "test"
 
-        # loss function
-        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+class SegLitModule(L.LightningModule):
+    def __init__(self, model, 
+                 loss1 = smp.losses.JaccardLoss(mode='binary', from_logits=True),
+                 loss2 = smp.losses.FocalLoss(mode='binary'),
+                 lr=1e-3, use_scheduler=True, **kwargs):
+        super().__init__()
+        assert model is not None, "Model must be provided"
+
+        self.save_hyperparameters(ignore=["model", "loss1", "loss2"])
+
+        self.model = model
+        self.loss_fn1 = loss1
+        self.loss_fn2 = loss2
+
+        # Pre-create default loss to avoid repeated instantiation
+        self._default_loss = smp.losses.DiceLoss(mode='binary', from_logits=True)
+        
+        # Determine loss strategy once during initialization
+        if self.loss_fn1 is not None and self.loss_fn2 is not None:
+            self._loss_strategy = "combined"
+        elif self.loss_fn1 is not None:
+            self._loss_strategy = "single"
+        else:
+            self._loss_strategy = "default"
 
         # initialize step metics
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.test_step_outputs = []
 
+    def _loss_fn(self, logits_mask, mask):
+        """
+        Optimized loss function computation.
+        """
+        if self._loss_strategy == "combined":
+            return self.loss_fn1(logits_mask, mask) + self.loss_fn2(logits_mask, mask)
+        elif self._loss_strategy == "single":
+            return self.loss_fn1(logits_mask, mask)
+        else:
+            return self._default_loss(logits_mask, mask)
+
     def forward(self, image):
         mask = self.model(image)
         return mask
+
+    def on_fit_start(self):
+        example_input = torch.randn(1, 4, 256, 256)  # Example input tensor
+        self.logger.log_graph(model=self.model, input_array=example_input)
 
     def shared_step(self, batch, stage):
         image = batch["image"]
@@ -57,10 +81,13 @@ class SMPLightningModule(L.LightningModule):
         logits_mask = self.forward(image)
 
         # Predicted mask contains logits, and loss_fn param `from_logits` is set to True
-        loss = self.loss_fn(logits_mask, mask)
+        loss = self._loss_fn(logits_mask, mask)
         
         # Log the loss
-        self.log(f"{stage}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        if stage == "train":
+            self.log(f"loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
+        elif stage == "val":
+            self.log(f"loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         # Lets compute metrics for some threshold
         # first convert mask values to probabilities, then
@@ -108,42 +135,46 @@ class SMPLightningModule(L.LightningModule):
         accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="macro")
         
         metrics = {
-            f"{stage}_accuracy": accuracy,
-            f"{stage}_per_image_iou": per_image_iou,
-            f"{stage}_dataset_iou": dataset_iou,
+            f"accuracy/{stage}": accuracy,
+            f"per_image_iou/{stage}": per_image_iou,
+            f"dataset_iou/{stage}": dataset_iou,
         }
 
         self.log_dict(metrics, prog_bar=True)
+        
+        if stage == VAL_STAGE:
+            # log the per_image_iou for model name
+            self.log(f"per_image_iou_{stage}", per_image_iou, on_step=False, on_epoch=True, prog_bar=False)
 
     def training_step(self, batch, batch_idx):
-        train_loss_info = self.shared_step(batch, "train")
+        train_loss_info = self.shared_step(batch, TRAIN_STAGE)
         # append the metics of each step to the
         self.training_step_outputs.append(train_loss_info)
         return train_loss_info
 
     def on_train_epoch_end(self):
-        self.shared_epoch_end(self.training_step_outputs, "train")
+        self.shared_epoch_end(self.training_step_outputs, TRAIN_STAGE)
         # empty set output list
         self.training_step_outputs.clear()
         return
 
     def validation_step(self, batch, batch_idx):
-        valid_loss_info = self.shared_step(batch, "val")
+        valid_loss_info = self.shared_step(batch, VAL_STAGE)
         self.validation_step_outputs.append(valid_loss_info)
         return valid_loss_info
 
     def on_validation_epoch_end(self):
-        self.shared_epoch_end(self.validation_step_outputs, "val")
+        self.shared_epoch_end(self.validation_step_outputs, VAL_STAGE)
         self.validation_step_outputs.clear()
         return
 
     def test_step(self, batch, batch_idx):
-        test_loss_info = self.shared_step(batch, "test")
+        test_loss_info = self.shared_step(batch, TEST_STAGE)
         self.test_step_outputs.append(test_loss_info)
         return test_loss_info
 
     def on_test_epoch_end(self):
-        self.shared_epoch_end(self.test_step_outputs, "test")
+        self.shared_epoch_end(self.test_step_outputs, TEST_STAGE)
         # empty set output list
         self.test_step_outputs.clear()
         return
@@ -159,7 +190,7 @@ class SMPLightningModule(L.LightningModule):
                 'scheduler': lr_scheduler.OneCycleLR(
                     optimizer,
                     max_lr=self.hparams.lr,
-                    total_steps=self.trainer.max_steps,
+                    total_steps=self.trainer.max_steps if self.trainer.max_steps > 0 else self.trainer.estimated_stepping_batches,
                     pct_start=0.1,
                 anneal_strategy="cos",
                 ),
@@ -168,4 +199,3 @@ class SMPLightningModule(L.LightningModule):
             return [optimizer], [scheduler]
         else:
             return [optimizer]
-    

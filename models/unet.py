@@ -55,9 +55,3 @@ class UNet(nn.Module):
         out= self.conv_last(x)
         return torch.sigmoid(out)
 
-def build_unet_model():
-    """
-    构造一个默认的 UNet 模型，支持 4 通道输入，1 通道输出。
-    可供 train.py 中直接调用。
-    """
-    return UNet(in_channels=4, out_channels=1)
