@@ -54,7 +54,7 @@ class SegLitModule(L.LightningModule):
 
     def on_fit_start(self):
         example_input = torch.randn(1, 4, 256, 256)  # Example input tensor
-        self.logger.log_graph(model=self.model, example_input=example_input)
+        self.logger.log_graph(model=self.model, input_array=example_input)
 
     def shared_step(self, batch, stage):
         image = batch["image"]
@@ -88,9 +88,6 @@ class SegLitModule(L.LightningModule):
             self.log(f"loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
         elif stage == "val":
             self.log(f"loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
-        else:
-            self.log(f"loss/{stage}", loss, on_step=False, on_epoch=False, prog_bar=False)
-        
 
         # Lets compute metrics for some threshold
         # first convert mask values to probabilities, then

@@ -34,8 +34,8 @@ class SegmentationTransform:
             ])
         else:
             transforms.extend([
-                A.SmallestMaxSize(max_size=target_size[0] * 2, p=1.0),
-                A.CenterCrop(height=target_size[0] * 2, width=target_size[1] * 2, p=1.0),
+                A.SmallestMaxSize(max_size=target_size[0]*2, p=1.0),
+                A.CenterCrop(height=target_size[0]*2, width=target_size[1]*2, p=1.0),
             ])
             
         if modality == "merged":

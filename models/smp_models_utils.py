@@ -3,7 +3,16 @@ from rich import print
 from lightning_modules import SMPLitModule
 
 def modes_list():
-    arch_list = smp._MODEL_ARCHITECTURES  # List of available architectures in segmentation_models_pytorch
+    arch_list = smp.__all__.copy()  # List of available architectures in segmentation_models_pytorch
+    arch_list.remove("datasets")  # Remove datasets as it's not an architecture
+    arch_list.remove("encoders")  # Remove encoders as it's not an architecture
+    arch_list.remove("decoders")  # Remove decoders as it's not an architecture
+    arch_list.remove("losses")  # Remove losses as it's not an architecture
+    arch_list.remove("metrics")  # Remove metrics as it's not an architecture
+    arch_list.remove("DPT")  # DPT is not supported in this context
+    arch_list.remove("from_pretrained")  # Remove from_pretrained as it's not an architecture
+    arch_list.remove("create_model")  # Remove create_model as it's not an architecture
+    arch_list.remove("__version__")  # Remove version info
     return arch_list
 
 def encoders_list(model_name):
@@ -19,6 +28,7 @@ def encoders_list(model_name):
             "mit_b2",
         ]
     else:
+        # Future work for DPT encoders
         encoder_list = [
             "tu-vit_small_patch16_224.augreg_in21k_ft_in1k",
             "tu-swin_tiny_patch4_window7_224.ms_in22k_ft_in1k",
