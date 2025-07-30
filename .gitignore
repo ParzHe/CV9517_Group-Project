@@ -217,6 +217,6 @@ __marimo__/
 *log*
 .lr_find_*
 
-/output
-/outputs
-/checkpoints
+output
+outputs
+checkpoints

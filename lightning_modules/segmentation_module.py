@@ -15,11 +15,13 @@ class SegLitModule(L.LightningModule):
         super().__init__()
         assert model is not None, "Model must be provided"
 
-        self.save_hyperparameters(ignore=["model", "loss1", "loss2"])
+        self.save_hyperparameters(ignore=["model", "encoder_weights", "out_classes", "loss1", "loss2", "lr", "use_scheduler"])
 
         self.model = model
         self.loss_fn1 = loss1
         self.loss_fn2 = loss2
+        self.lr = lr
+        self.use_scheduler = use_scheduler
 
         # Pre-create default loss to avoid repeated instantiation
         self._default_loss = smp.losses.DiceLoss(mode='binary', from_logits=True)
@@ -84,9 +86,9 @@ class SegLitModule(L.LightningModule):
         loss = self._loss_fn(logits_mask, mask)
         
         # Log the loss
-        if stage == "train":
+        if stage == TRAIN_STAGE:
             self.log(f"loss/{stage}", loss, on_step=True, on_epoch=True, prog_bar=True)
-        elif stage == "val":
+        elif stage == VAL_STAGE:
             self.log(f"loss/{stage}", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         # Lets compute metrics for some threshold
@@ -182,14 +184,14 @@ class SegLitModule(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters())
         
-        if not self.hparams.use_scheduler:
+        if not self.use_scheduler:
             return optimizer
 
         if hasattr(self.trainer, 'max_epochs') and int(self.trainer.max_epochs) > 0:
             scheduler = {
                 'scheduler': lr_scheduler.OneCycleLR(
                     optimizer,
-                    max_lr=self.hparams.lr,
+                    max_lr=self.lr,
                     total_steps=self.trainer.max_steps if self.trainer.max_steps > 0 else self.trainer.estimated_stepping_batches,
                     pct_start=0.1,
                 anneal_strategy="cos",

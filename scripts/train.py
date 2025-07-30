@@ -7,21 +7,21 @@ import math
 from datetime import datetime
 
 import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, RichProgressBar, RichModelSummary
-from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, RichProgressBar, RichModelSummary, Timer
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
 from lightning_modules import SMPLitModule
-from utils import paths,TimerCallback
+from utils import paths
 import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
 from rich import print
 
 TARGET_SIZE = 256
-BATCH_SIZE = 48
+BATCH_SIZE = 32
+VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision for training
 LOSS1 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.FocalLoss(mode='binary')
@@ -29,17 +29,46 @@ EARLY_STOP_PATIENCE = 20
 FREEZE_ENCODER_LAYERS = False  # Set to True if you want to freeze encoder layers
 FREEZE_ENCODER_LAYERS_RANGE = (0, 1)  # Range of layers to freeze, if applicable
 MAX_EPOCHS = 100
+MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
+MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 arch_list = modes_list()
 modality_list = ["merged", "rgb", "nrg"]
 
 # Initialize callbacks
-progress_bar = RichProgressBar()
+
 freeze_tool = FreezeSMPEncoderUtils()
+
+def callbacks(encoder_name, arch, version):
+    progress_bar = RichProgressBar()
+    model_sum_callback = RichModelSummary(max_depth=2)
+    lr_monitor = LearningRateMonitor(logging_interval='step')
+    early_stop_callback = EarlyStopping(
+        monitor="per_image_iou/val",
+        patience=EARLY_STOP_PATIENCE,
+        verbose=True,
+        mode="max"  # Maximize the metric
+    )
+    
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version),
+        monitor="per_image_iou/val",
+        filename="{epoch:02d}-{per_image_iou_val:.4f}",
+        mode="max",
+        save_top_k=2,
+        enable_version_counter=True,
+    )
+    return [
+        progress_bar,
+        model_sum_callback,
+        lr_monitor,
+        early_stop_callback,
+        checkpoint_callback
+    ]
 
 def run_train():
     for modality in modality_list:
-        version = f"{modality}_{TARGET_SIZE}"
+        version = f"{modality}_{TARGET_SIZE}" if VERSION_SUFFIX == "" else f"{modality}_{TARGET_SIZE}_{VERSION_SUFFIX}"
         data_module = AerialDeadTreeSegDataModule(
             val_split=0.1, test_split=0.2, seed=42,
             modality=modality, # in_channels=4. If modality is "merged", it will use 4 channels (RGB + NIR); Otherwise, it will use 3 channels (RGB).
@@ -50,8 +79,9 @@ def run_train():
         
         for arch in arch_list:
             for encoder_name in encoders_list(arch):
+                print("\n\n")
                 print("[dim]--------------------------------------------------[/dim]")
-                print(f"Training [bold]{arch} [/bold] with [bold] {modality} [/bold] modality and encoder [bold]{encoder_name}[/bold]")
+                print(f"Training [bold]{encoder_name}-{arch} [/bold] on [bold] {modality} [/bold] modality")
                 start_time = datetime.now()
                 print(f"Training started at [bold]{start_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
                 
@@ -61,96 +91,57 @@ def run_train():
                     in_channels=data_module.in_channels,
                     loss1=LOSS1,
                     loss2=LOSS2,
-                    use_scheduler=False,
                 )
                 if FREEZE_ENCODER_LAYERS:
                     freeze_tool(model, encoder_name, layers_range=FREEZE_ENCODER_LAYERS_RANGE)
                 
-                trainer = L.Trainer(
-                    log_every_n_steps=5,
-                    precision=PRECISION,
-                )
+                # Initialize callbacks
+                callback_list = callbacks(encoder_name, arch, version)
                 
-                tuner = Tuner(trainer)
-                lr_finder = tuner.lr_find(model, datamodule=data_module,
-                                        min_lr=1e-5, max_lr= 0.1,
-                                        num_training=100, early_stop_threshold=4)
-                suggested_lr = lr_finder.suggestion()
-
-                # Round the suggested learning rate to 1 significant digit
-                magnitude =  10 ** (math.floor(math.log10(suggested_lr)))
-                suggested_lr = round(suggested_lr / magnitude) * magnitude
-
-                print(f"Rounded suggested learning rate: {suggested_lr}")
-                
-                model = SMPLitModule(
-                    arch=arch,
-                    encoder_name=encoder_name,
-                    in_channels=data_module.in_channels,
-                    loss1=LOSS1,
-                    loss2=LOSS2,
-                    lr=suggested_lr,
-                    use_scheduler=True
-                )
-                if FREEZE_ENCODER_LAYERS:
-                    freeze_tool(model, encoder_name, layers_range=FREEZE_ENCODER_LAYERS_RANGE)
-                
-                model_sum_callback = RichModelSummary(max_depth=2)
-
-                lr_monitor = LearningRateMonitor(logging_interval='step')
-
-                early_stop_callback = EarlyStopping(
-                    monitor="per_image_iou/val",
-                    patience=EARLY_STOP_PATIENCE,
-                    verbose=True,
-                    mode="max"  # Maximize the metric
-                )
-
-                timer = TimerCallback()
-                
-                checkpoint_callback = ModelCheckpoint(
-                    dirpath=os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version),
-                    monitor="per_image_iou/val",
-                    filename="{epoch:02d}-{per_image_iou_val:.4f}",
-                    mode="max",
-                    save_top_k=3,
-                    enable_version_counter=True,
-                )
-                
+                # Initialize logger
                 logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"smp_{encoder_name}_{arch}", version=version)
 
+                # Initialize the trainer
                 trainer = L.Trainer(
                     precision=PRECISION,
                     max_epochs=MAX_EPOCHS,
                     enable_progress_bar=True,
                     logger=logger,
                     log_every_n_steps=5,
-                    callbacks=[
-                        model_sum_callback,
-                        lr_monitor,
-                        early_stop_callback,
-                        timer,
-                        progress_bar,
-                        checkpoint_callback
-                    ],
+                    callbacks=callback_list,
                 )
+                timer = Timer()
+                trainer.callbacks.append(timer)
+                
+                tuner = Tuner(trainer)
+                lr_finder = tuner.lr_find(model, datamodule=data_module,
+                                        min_lr=MIN_LR, max_lr=MAX_LR,
+                                        num_training=100, early_stop_threshold=4)
+                suggested_lr = lr_finder.suggestion()
+
+                print(f"\nSuggested learning rate: {suggested_lr}")
+                Cur_init_lr = model.hparams.lr if hasattr(model.hparams, 'lr') else model.lr
+                print(f"Current initial learning rate: [bold]{Cur_init_lr}[/bold]")
+
                 trainer.fit(model, datamodule=data_module)
                 
                 end_time = datetime.now()
-                print(f"[green]Training {arch} with {encoder_name} on {modality} modality completed[/green]")
+                print(f"[green]Training [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
                 print(f"Completion time is at [bold]{end_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
-                print(f"Total training time: [bold]{(end_time - start_time).total_seconds()} seconds[/bold].")
-                print("[dim]--------------------------------------------------[/dim]")
-                print("\n\n")
-                
+                print(f"Total training stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
+                print(f"Total validation stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")
+
+
                 # Test the model
-                print(f"Testing model {arch} with encoder {encoder_name} on {modality} modality")
+                print(f"\nTesting [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
                 start_time = datetime.now()
                 print(f"Testing started at [bold]{start_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
                 trainer.test(model, datamodule=data_module)
                 end_time = datetime.now()
-                print(f"Testing completed for {arch} with {encoder_name} on {modality} modality at [bold]{end_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
-                print(f"Total testing time: [bold]{(end_time - start_time).total_seconds()} seconds[/bold].")
+                print(f"Testing completed at [bold]{end_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
+                print(f"Total testing time: [bold]{(timer.time_elapsed('test'))} seconds[/bold].")
+                print("[dim]--------------------------------------------------[/dim]")
+                print("\n\n")
 
                 del model
                 del logger
