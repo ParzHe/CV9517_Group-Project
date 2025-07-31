@@ -3,7 +3,6 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-import math
 from datetime import datetime
 
 import lightning as L
@@ -18,6 +17,8 @@ import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
 from rich import print
+from rich.logging import RichHandler
+import logging
 
 TARGET_SIZE = 256
 BATCH_SIZE = 32
@@ -33,6 +34,8 @@ MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 arch_list = modes_list()
+arch_list.remove("Unet")
+arch_list.remove("UnetPlusPlus")
 modality_list = ["merged", "rgb", "nrg"]
 
 # Initialize callbacks

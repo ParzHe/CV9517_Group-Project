@@ -15,9 +15,26 @@ def modes_list():
     arch_list.remove("__version__")  # Remove version info
     return arch_list
 
-def encoders_list(model_name):
+def encoders_list(model_name:str):
     encoder_list = []
-    if model_name != "DPT":
+    
+    if model_name.upper() == "DPT":
+        # Future work for DPT encoders
+        encoder_list = [
+            "tu-vit_small_patch16_224.augreg_in21k_ft_in1k",
+            "tu-swin_tiny_patch4_window7_224.ms_in22k_ft_in1k",
+            "tu-swinv2_tiny_window8_256.ms_in1k",
+        ]
+    elif model_name.upper() == "UNETPLUSPLUS":    
+        encoder_list = [
+            "resnet50",
+            "resnext50_32x4d",
+            "se_resnet50",
+            "se_resnext50_32x4d",
+            "densenet161",
+            "efficientnet-b5",
+        ]
+    else:
         encoder_list = [
             "resnet50",
             "resnext50_32x4d",
@@ -27,13 +44,7 @@ def encoders_list(model_name):
             "efficientnet-b5",
             "mit_b2",
         ]
-    else:
-        # Future work for DPT encoders
-        encoder_list = [
-            "tu-vit_small_patch16_224.augreg_in21k_ft_in1k",
-            "tu-swin_tiny_patch4_window7_224.ms_in22k_ft_in1k",
-            "tu-swinv2_tiny_window8_256.ms_in1k",
-        ]
+        
     return encoder_list
 
 class FreezeSMPEncoderUtils:

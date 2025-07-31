@@ -135,12 +135,24 @@ class SegLitModule(L.LightningModule):
         # Empty images influence a lot on per_image_iou and much less on dataset_iou.
         dataset_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
         accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="macro")
-        
-        metrics = {
-            f"accuracy/{stage}": accuracy,
-            f"per_image_iou/{stage}": per_image_iou,
-            f"dataset_iou/{stage}": dataset_iou,
-        }
+        if stage == TEST_STAGE or stage == VAL_STAGE:
+            f1_score = smp.metrics.f1_score(tp, fp, fn, tn, reduction="macro")
+            precision = smp.metrics.precision(tp, fp, fn, tn, reduction="macro")
+            recall = smp.metrics.recall(tp, fp, fn, tn, reduction="macro")
+            metrics = {
+                f"accuracy/{stage}": accuracy,
+                f"per_image_iou/{stage}": per_image_iou,
+                f"dataset_iou/{stage}": dataset_iou,
+                f"f1_score/{stage}": f1_score,
+                f"precision/{stage}": precision,
+                f"recall/{stage}": recall,
+            }
+        else:
+            metrics = {
+                f"accuracy/{stage}": accuracy,
+                f"per_image_iou/{stage}": per_image_iou,
+                f"dataset_iou/{stage}": dataset_iou,
+            }
 
         self.log_dict(metrics, prog_bar=True)
         
