@@ -80,7 +80,7 @@ def run_train():
         
         for arch in arch_list:
             for encoder_name in encoders_list(arch):
-                log_dir = os.path.join(paths.checkpoint_dir, f"smp_{arch}_{modality}", version)
+                log_dir = os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version)
                 os.makedirs(log_dir, exist_ok=True)
                 logging.basicConfig(
                     level=logging.INFO,
