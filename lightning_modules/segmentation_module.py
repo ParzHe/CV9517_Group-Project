@@ -56,7 +56,7 @@ class SegLitModule(L.LightningModule):
 
     def on_fit_start(self):
         example_input = torch.randn(1, 4, 256, 256)  # Example input tensor
-        self.logger.log_graph(model=self.model, input_array=example_input)
+        self.logger.log_graph(model=self, input_array=example_input)
 
     def shared_step(self, batch, stage):
         image = batch["image"]
@@ -127,6 +127,7 @@ class SegLitModule(L.LightningModule):
         per_image_iou = smp.metrics.iou_score(
             tp, fp, fn, tn, reduction="micro-imagewise"
         )
+        self.log(f'per_image_iou/{stage}', per_image_iou, prog_bar=True, logger=True)
 
         # dataset IoU means that we aggregate intersection and union over whole dataset
         # and then compute IoU score. The difference between dataset_iou and per_image_iou scores
@@ -134,27 +135,27 @@ class SegLitModule(L.LightningModule):
         # with "empty" images (images without target class) a large gap could be observed.
         # Empty images influence a lot on per_image_iou and much less on dataset_iou.
         dataset_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
-        accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="macro")
-        if stage == TEST_STAGE or stage == VAL_STAGE:
-            f1_score = smp.metrics.f1_score(tp, fp, fn, tn, reduction="macro")
-            precision = smp.metrics.precision(tp, fp, fn, tn, reduction="macro")
-            recall = smp.metrics.recall(tp, fp, fn, tn, reduction="macro")
-            metrics = {
-                f"accuracy/{stage}": accuracy,
-                f"per_image_iou/{stage}": per_image_iou,
-                f"dataset_iou/{stage}": dataset_iou,
-                f"f1_score/{stage}": f1_score,
-                f"precision/{stage}": precision,
-                f"recall/{stage}": recall,
-            }
-        else:
-            metrics = {
-                f"accuracy/{stage}": accuracy,
-                f"per_image_iou/{stage}": per_image_iou,
-                f"dataset_iou/{stage}": dataset_iou,
-            }
+        accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="micro-imagewise")
+        f1_score = smp.metrics.f1_score(tp, fp, fn, tn, reduction="micro-imagewise")
+        f2_score = smp.metrics.fbeta_score(tp, fp, fn, tn, beta=2, reduction="micro-imagewise")
+        precision = smp.metrics.precision(tp, fp, fn, tn, reduction="micro-imagewise")
+        recall = smp.metrics.recall(tp, fp, fn, tn, reduction="micro-imagewise")
+        sensitivity = smp.metrics.sensitivity(tp, fp, fn, tn, reduction="micro-imagewise")
+        specificity = smp.metrics.specificity(tp, fp, fn, tn, reduction="micro-imagewise")
 
-        self.log_dict(metrics, prog_bar=True)
+        # Except iou, all metrics are computed per image
+        metrics = {
+            f"dataset_iou/{stage}": dataset_iou,
+            f"accuracy/{stage}": accuracy,
+            f"f1_score/{stage}": f1_score,
+            f"f2_score/{stage}": f2_score,
+            f"precision/{stage}": precision,
+            f"recall/{stage}": recall,
+            f"sensitivity/{stage}": sensitivity,
+            f"specificity/{stage}": specificity,
+        }
+        
+        self.log_dict(metrics, prog_bar=False, logger=True)
         
         if stage == VAL_STAGE:
             # log the per_image_iou for model name
@@ -208,7 +209,7 @@ class SegLitModule(L.LightningModule):
                     pct_start=0.1,
                 anneal_strategy="cos",
                 ),
-                'interval': 'step', # 
+                'interval': 'step', 
             }
             return [optimizer], [scheduler]
         else:

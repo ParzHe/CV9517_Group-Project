@@ -17,8 +17,8 @@ import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
 from rich import print
-from rich.logging import RichHandler
 import logging
+from rich.logging import RichHandler
 
 TARGET_SIZE = 256
 BATCH_SIZE = 32
@@ -34,8 +34,6 @@ MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 arch_list = modes_list()
-arch_list.remove("Unet")
-arch_list.remove("UnetPlusPlus")
 modality_list = ["merged", "rgb", "nrg"]
 
 # Initialize callbacks
@@ -82,12 +80,23 @@ def run_train():
         
         for arch in arch_list:
             for encoder_name in encoders_list(arch):
-                print("\n\n")
+                log_dir = os.path.join(paths.checkpoint_dir, f"smp_{arch}_{modality}", version)
+                os.makedirs(log_dir, exist_ok=True)
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format="[%(asctime)s]  %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                    handlers=[
+                        RichHandler(show_time=False, rich_tracebacks=True, markup=True),
+                        logging.FileHandler(os.path.join(log_dir, "train.log"), encoding='utf-8')
+                    ]
+                )
+                log = logging.getLogger(f"smp_{encoder_name}_{arch}_{modality}")
+
+                print()
                 print("[dim]--------------------------------------------------[/dim]")
-                print(f"Training [bold]{encoder_name}-{arch} [/bold] on [bold] {modality} [/bold] modality")
-                start_time = datetime.now()
-                print(f"Training started at [bold]{start_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
-                
+                log.info(f"Start Training [bold]{encoder_name}-{arch} [/bold] on [bold] {modality} [/bold] modality")
+
                 model = SMPLitModule(
                     arch=arch,
                     encoder_name=encoder_name,
@@ -102,14 +111,14 @@ def run_train():
                 callback_list = callbacks(encoder_name, arch, version)
                 
                 # Initialize logger
-                logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"smp_{encoder_name}_{arch}", version=version)
+                tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"smp_{encoder_name}_{arch}", version=version, log_graph=True)
 
                 # Initialize the trainer
                 trainer = L.Trainer(
                     precision=PRECISION,
                     max_epochs=MAX_EPOCHS,
                     enable_progress_bar=True,
-                    logger=logger,
+                    logger=tb_logger,
                     log_every_n_steps=5,
                     callbacks=callback_list,
                 )
@@ -120,34 +129,27 @@ def run_train():
                 lr_finder = tuner.lr_find(model, datamodule=data_module,
                                         min_lr=MIN_LR, max_lr=MAX_LR,
                                         num_training=100, early_stop_threshold=4)
-                suggested_lr = lr_finder.suggestion()
-
-                print(f"\nSuggested learning rate: {suggested_lr}")
+                log.info(f"Learning rate finder suggestion: {lr_finder.suggestion()}")
                 Cur_init_lr = model.hparams.lr if hasattr(model.hparams, 'lr') else model.lr
-                print(f"Current initial learning rate: [bold]{Cur_init_lr}[/bold]")
+                log.info(f"Current initial learning rate update to suggested: [bold]{Cur_init_lr}[/bold]")
 
                 trainer.fit(model, datamodule=data_module)
                 
-                end_time = datetime.now()
-                print(f"[green]Training [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
-                print(f"Completion time is at [bold]{end_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
-                print(f"Total training stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
-                print(f"Total validation stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")
-
+                log.info(f"[green]Training [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
 
                 # Test the model
-                print(f"\nTesting [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
-                start_time = datetime.now()
-                print(f"Testing started at [bold]{start_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
+                log.info(f"\nTesting [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
                 trainer.test(model, datamodule=data_module)
-                end_time = datetime.now()
-                print(f"Testing completed at [bold]{end_time.strftime('%Y-%m-%d %H:%M:%S')}[/bold].")
-                print(f"Total testing time: [bold]{(timer.time_elapsed('test'))} seconds[/bold].")
-                print("[dim]--------------------------------------------------[/dim]")
+                log.info(f"[green]Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
+                print()
+                log.info(f"Total [bold]training[/bold] stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
+                log.info(f"Total [bold]validation[/bold] stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")
+                log.info(f"Total [bold]testing[/bold] time: [bold]{(timer.time_elapsed('test'))} seconds[/bold].")
                 print("\n\n")
 
+                del log
                 del model
-                del logger
+                del tb_logger
                 del trainer
                 del tuner
 
