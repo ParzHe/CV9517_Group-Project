@@ -8,6 +8,7 @@ class PathManager:
     def __init__(self):
         home_dir = os.path.expanduser("~")
         self.kaggle_datasets_dir = os.path.join(home_dir, ".cache", "kagglehub", "datasets")
+        self.project_root = os.getenv("PROJECT_ROOT", "./")  # Default to current directory if not set)
         
         self.data_split_dir = os.getenv("DATA_SPLIT_DIR", "./data_splits")
         self.log_dir = os.getenv("LOG_DIR", "./logs")

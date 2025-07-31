@@ -55,7 +55,9 @@ class SegLitModule(L.LightningModule):
         return mask
 
     def on_fit_start(self):
-        example_input = torch.randn(1, 4, 256, 256)  # Example input tensor
+        if self.hparams.get("in_channels") is None:
+            return
+        example_input = torch.randn(1, self.hparams.in_channels, 256, 256)  # Example input tensor
         self.logger.log_graph(model=self, input_array=example_input)
 
     def shared_step(self, batch, stage):

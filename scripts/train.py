@@ -12,13 +12,11 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
 from lightning_modules import SMPLitModule
-from utils import paths
+from utils import paths, make_logger
 import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
 from rich import print
-import logging
-from rich.logging import RichHandler
 
 TARGET_SIZE = 256
 BATCH_SIZE = 32
@@ -26,7 +24,7 @@ VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision for training
 LOSS1 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.FocalLoss(mode='binary')
-EARLY_STOP_PATIENCE = 20
+EARLY_STOP_PATIENCE = 25
 FREEZE_ENCODER_LAYERS = False  # Set to True if you want to freeze encoder layers
 FREEZE_ENCODER_LAYERS_RANGE = (0, 1)  # Range of layers to freeze, if applicable
 MAX_EPOCHS = 100
@@ -34,6 +32,7 @@ MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 arch_list = modes_list()
+encoder_only = "all"  # Set to "all" to use all available encoders, or specify a specific encoder name
 modality_list = ["merged", "rgb", "nrg"]
 
 # Initialize callbacks
@@ -79,22 +78,17 @@ def run_train():
         )
         
         for arch in arch_list:
-            for encoder_name in encoders_list(arch):
+            for encoder_name in encoders_list(arch, only_available=encoder_only):
                 log_dir = os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version)
                 os.makedirs(log_dir, exist_ok=True)
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format="[%(asctime)s]  %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S",
-                    handlers=[
-                        RichHandler(show_time=False, rich_tracebacks=True, markup=True),
-                        logging.FileHandler(os.path.join(log_dir, "train.log"), encoding='utf-8')
-                    ]
+                log_path = os.path.join(log_dir, "train.log")
+                log = make_logger(
+                    name=f"smp_{encoder_name}_{arch}_{modality}",
+                    log_path=log_path
                 )
-                log = logging.getLogger(f"smp_{encoder_name}_{arch}_{modality}")
 
                 print()
-                print("[dim]--------------------------------------------------[/dim]")
+                print("[dim]-[/dim]" * 60)
                 log.info(f"Start Training [bold]{encoder_name}-{arch} [/bold] on [bold] {modality} [/bold] modality")
 
                 model = SMPLitModule(
@@ -138,14 +132,16 @@ def run_train():
                 log.info(f"[green]Training [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
 
                 # Test the model
-                log.info(f"\nTesting [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
+                log.info("")
+                log.info(f"Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
                 trainer.test(model, datamodule=data_module)
                 log.info(f"[green]Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
-                print()
+
+                log.info("")
                 log.info(f"Total [bold]training[/bold] stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
                 log.info(f"Total [bold]validation[/bold] stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")
                 log.info(f"Total [bold]testing[/bold] time: [bold]{(timer.time_elapsed('test'))} seconds[/bold].")
-                print("\n\n")
+                print("[dim]-[/dim]" * 60)
 
                 del log
                 del model
