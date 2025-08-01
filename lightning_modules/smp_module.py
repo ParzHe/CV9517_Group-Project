@@ -19,5 +19,5 @@ class SMPLitModule(SegLitModule):
             classes=out_classes,
             dynamic_img_size=True,
         )
-        super().__init__(model=model, loss1=loss1, loss2=loss2, lr=lr, use_scheduler=use_scheduler, **kwargs)
+        super().__init__(model=model, in_channels=in_channels, loss1=loss1, loss2=loss2, lr=lr, use_scheduler=use_scheduler, **kwargs)
         self.save_hyperparameters(ignore=["encoder_weights", "out_classes", "loss1", "loss2", "lr", "use_scheduler"])

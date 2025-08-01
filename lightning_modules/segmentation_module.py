@@ -8,7 +8,7 @@ VAL_STAGE = "val"
 TEST_STAGE = "test"
 
 class SegLitModule(L.LightningModule):
-    def __init__(self, model, 
+    def __init__(self, model, in_channels=3,
                  loss1 = smp.losses.JaccardLoss(mode='binary', from_logits=True),
                  loss2 = smp.losses.FocalLoss(mode='binary'),
                  lr=1e-3, use_scheduler=True, **kwargs):
@@ -38,6 +38,11 @@ class SegLitModule(L.LightningModule):
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.test_step_outputs = []
+        
+        if self.hparams.in_channels is not None:
+            self.example_input_array = torch.randn(1, self.hparams.in_channels, 256, 256)  # Example input tensor for logging
+        else:
+            self.example_input_array = torch.randn(1, 3, 256, 256)
 
     def _loss_fn(self, logits_mask, mask):
         """
@@ -53,12 +58,6 @@ class SegLitModule(L.LightningModule):
     def forward(self, image):
         mask = self.model(image)
         return mask
-
-    def on_fit_start(self):
-        if self.hparams.in_channels is None:
-            return
-        example_input = torch.randn(1, self.hparams.in_channels, 256, 256)  # Example input tensor
-        self.logger.log_graph(model=self, input_array=example_input)
 
     def shared_step(self, batch, stage):
         image = batch["image"]

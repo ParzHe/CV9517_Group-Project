@@ -28,7 +28,7 @@ def encoders_list(model_name:str, only_available = "all"):
             ]
         else:
             encoder_list = [only_available]
-    elif model_name.upper() == "UNETPLUSPLUS":
+    elif model_name.upper() == "UNETPLUSPLUS" or model_name.upper() == "LINKNET":
         if only_available == "all":
             encoder_list = [
                 "resnet50",
