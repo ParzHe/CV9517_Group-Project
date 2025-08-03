@@ -11,7 +11,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
 from lightning_modules import U2netLitModule
-from utils import paths, make_logger
+from utils import paths, make_logger, callbacks
 import segmentation_models_pytorch as smp
 
 from rich import print
@@ -29,39 +29,10 @@ MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 modality_list = ["merged", "rgb", "nrg"]
-modes_map = {
+models_map = {
     "U2net": U2netLitModule,
 }
-models_list = list(modes_map.keys())
-
-
-def callbacks(model_name, version):
-    progress_bar = RichProgressBar()
-    model_sum_callback = RichModelSummary(max_depth=2)
-    lr_monitor = LearningRateMonitor(logging_interval='step')
-    early_stop_callback = EarlyStopping(
-        monitor="per_image_iou/val",
-        min_delta=0.001,
-        patience=EARLY_STOP_PATIENCE,
-        verbose=True,
-        mode="max"  # Maximize the metric
-    )
-    
-    checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join(paths.checkpoint_dir, f"{model_name}", version),
-        monitor="per_image_iou/val",
-        filename="{epoch:02d}-{per_image_iou_val:.4f}",
-        mode="max",
-        save_top_k=2,
-        enable_version_counter=True,
-    )
-    return [
-        progress_bar,
-        model_sum_callback,
-        lr_monitor,
-        early_stop_callback,
-        checkpoint_callback
-    ]
+models_list = list(models_map.keys())
 
 def run_train():
     for modality in modality_list:
@@ -87,14 +58,14 @@ def run_train():
             print("[dim]-[/dim]" * 60)
             log.info(f"Start Training [bold]{model_name} [/bold] on [bold] {modality} [/bold] modality")
 
-            model = modes_map[model_name](
+            model = models_map[model_name](
                 in_channels=data_module.in_channels,
                 out_classes=1
             )
             
             # Initialize callbacks
-            callback_list = callbacks(model_name, version)
-            
+            callback_list = callbacks(model_name, EARLY_STOP_PATIENCE, version)
+
             # Initialize logger
             tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"{model_name}_{modality}", version=version, log_graph=True)
 
@@ -137,12 +108,13 @@ def run_train():
 
             del log
             del model
+            del callback_list
             del tb_logger
             del trainer
             del tuner
 
 if __name__ == "__main__":
-    print("[bold]Starting training process for all configurations...[/bold]")
+    print("[bold]Starting training U2-Net process for all configurations...[/bold]")
     print(f"Target size: {TARGET_SIZE}. Max epochs: {MAX_EPOCHS}. ")
     run_train()
     print("[green]Training completed for all configurations.[/green]")

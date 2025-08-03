@@ -10,7 +10,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
 from lightning_modules import SMPLitModule
-from utils import paths, make_logger
+from utils import paths, make_logger, callbacks
 import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
@@ -37,34 +37,6 @@ modality_list = ["merged", "rgb", "nrg"]
 # Initialize callbacks
 
 freeze_tool = FreezeSMPEncoderUtils()
-
-def callbacks(encoder_name, arch, version):
-    progress_bar = RichProgressBar()
-    model_sum_callback = RichModelSummary(max_depth=2)
-    lr_monitor = LearningRateMonitor(logging_interval='step')
-    early_stop_callback = EarlyStopping(
-        monitor="per_image_iou/val",
-        min_delta=0.001,
-        patience=EARLY_STOP_PATIENCE,
-        verbose=True,
-        mode="max"  # Maximize the metric
-    )
-    
-    checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version),
-        monitor="per_image_iou/val",
-        filename="{epoch:02d}-{per_image_iou_val:.4f}",
-        mode="max",
-        save_top_k=2,
-        enable_version_counter=True,
-    )
-    return [
-        progress_bar,
-        model_sum_callback,
-        lr_monitor,
-        early_stop_callback,
-        checkpoint_callback
-    ]
 
 def run_train():
     for modality in modality_list:
@@ -102,10 +74,11 @@ def run_train():
                     freeze_tool(model, encoder_name, layers_range=FREEZE_ENCODER_LAYERS_RANGE)
                 
                 # Initialize callbacks
-                callback_list = callbacks(encoder_name, arch, version)
-                
+                model_name = f"smp_{encoder_name}_{arch}"
+                callback_list = callbacks(model_name, EARLY_STOP_PATIENCE, version)
+
                 # Initialize logger
-                tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"smp_{encoder_name}_{arch}", version=version, log_graph=True)
+                tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=model_name, version=version, log_graph=True)
 
                 # Initialize the trainer
                 trainer = L.Trainer(
@@ -146,6 +119,7 @@ def run_train():
 
                 del log
                 del model
+                del callback_list
                 del tb_logger
                 del trainer
                 del tuner
