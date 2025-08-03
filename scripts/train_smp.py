@@ -11,7 +11,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
-from lightning_modules import SMPLitModule, U2netLitModule
+from lightning_modules import SMPLitModule
 from utils import paths, make_logger
 import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
