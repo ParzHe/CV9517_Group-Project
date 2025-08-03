@@ -214,7 +214,8 @@ __marimo__/
 /lib
 /sam2
 
-/*log*
+lightning_logs
+tb_logs
 logs
 .lr_find_*
 
