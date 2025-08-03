@@ -9,50 +9,47 @@ def modes_list():
     arch_list.remove("decoders")  # Remove decoders as it's not an architecture
     arch_list.remove("losses")  # Remove losses as it's not an architecture
     arch_list.remove("metrics")  # Remove metrics as it's not an architecture
+    arch_list.remove("MAnet")  # Remove MAnet since the decoder parameters are too large for training on this dataset
     arch_list.remove("DPT")  # DPT is not supported in this context
     arch_list.remove("from_pretrained")  # Remove from_pretrained as it's not an architecture
     arch_list.remove("create_model")  # Remove create_model as it's not an architecture
     arch_list.remove("__version__")  # Remove version info
+    arch_list.append("Unet_scse")  # Add Unet with SCSE attention
     return arch_list
 
 def encoders_list(model_name:str, only_available = "all"):
-    encoder_list = []
+    encoder_list = [
+        "resnet50",
+        "resnext50_32x4d",
+        "se_resnet50",
+        "se_resnext50_32x4d",
+        "densenet161",
+        "efficientnet-b5",
+        "mit_b2",
+    ]
+
+    if isinstance(only_available, str) and not only_available == "all":
+        encoder_list = [only_available]
+    elif isinstance(only_available, list):
+        for enc in only_available:
+            if not isinstance(enc, str):
+                raise ValueError(f"Invalid encoder name: {enc}. Must be a string.")
+        encoder_list = only_available
+        
     
     if model_name.upper() == "DPT":
         # Future work for DPT encoders
-        if only_available == "all":
-            encoder_list = [
-                "tu-vit_small_patch16_224.augreg_in21k_ft_in1k",
-                "tu-swin_tiny_patch4_window7_224.ms_in22k_ft_in1k",
-                "tu-swinv2_tiny_window8_256.ms_in1k",
-            ]
-        else:
-            encoder_list = [only_available]
+        encoder_list = [
+            "tu-vit_small_patch16_224.augreg_in21k_ft_in1k",
+            "tu-swin_tiny_patch4_window7_224.ms_in22k_ft_in1k",
+            "tu-swinv2_tiny_window8_256.ms_in1k",
+        ]
     elif model_name.upper() == "UNETPLUSPLUS" or model_name.upper() == "LINKNET":
         if only_available == "all":
-            encoder_list = [
-                "resnet50",
-                "resnext50_32x4d",
-                "se_resnet50",
-                "se_resnext50_32x4d",
-                "densenet161",
-                "efficientnet-b5",
-            ]
-        else:
-            encoder_list = [only_available]
-    else:
+            encoder_list.remove("mit_b2")  # Remove MIT-B2 as it's not supported for these architectures
+    elif model_name.upper() == "DEEPLABV3" or model_name.upper() == "DEEPLABV3PLUS" or model_name.upper() == "PAN":
         if only_available == "all":
-            encoder_list = [
-                "resnet50",
-                "resnext50_32x4d",
-                "se_resnet50",
-                "se_resnext50_32x4d",
-                "densenet161",
-                "efficientnet-b5",
-                "mit_b2",
-            ]
-        else:
-            encoder_list = [only_available]
+            encoder_list.remove("densenet161")  # Remove DenseNet as it's not supported for DeepLabV3
         
     return encoder_list
 

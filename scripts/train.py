@@ -11,7 +11,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from data import AerialDeadTreeSegDataModule
 from lightning.pytorch.tuner import Tuner
-from lightning_modules import SMPLitModule
+from lightning_modules import SMPLitModule, U2netLitModule
 from utils import paths, make_logger
 import segmentation_models_pytorch as smp
 from models import FreezeSMPEncoderUtils, modes_list, encoders_list
@@ -19,12 +19,13 @@ from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 from rich import print
 
 TARGET_SIZE = 256
-BATCH_SIZE = 32
+BATCH_SIZE = 32  # Default 32, if oom, try 16 or 8
+ACCUMULATE_GRAD_BATCHES = 1  # Default 1, if oom, try 2 or 4
 VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision for training
 LOSS1 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.FocalLoss(mode='binary')
-EARLY_STOP_PATIENCE = 25
+EARLY_STOP_PATIENCE = 30
 FREEZE_ENCODER_LAYERS = False  # Set to True if you want to freeze encoder layers
 FREEZE_ENCODER_LAYERS_RANGE = (0, 1)  # Range of layers to freeze, if applicable
 MAX_EPOCHS = 100
@@ -45,6 +46,7 @@ def callbacks(encoder_name, arch, version):
     lr_monitor = LearningRateMonitor(logging_interval='step')
     early_stop_callback = EarlyStopping(
         monitor="per_image_iou/val",
+        min_delta=0.001,
         patience=EARLY_STOP_PATIENCE,
         verbose=True,
         mode="max"  # Maximize the metric
@@ -109,6 +111,7 @@ def run_train():
 
                 # Initialize the trainer
                 trainer = L.Trainer(
+                    accumulate_grad_batches=ACCUMULATE_GRAD_BATCHES,
                     precision=PRECISION,
                     max_epochs=MAX_EPOCHS,
                     enable_progress_bar=True,
@@ -134,7 +137,7 @@ def run_train():
                 # Test the model
                 log.info("")
                 log.info(f"Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
-                trainer.test(model, datamodule=data_module)
+                trainer.test(datamodule=data_module,ckpt_path="best")
                 log.info(f"[green]Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
 
                 log.info("")

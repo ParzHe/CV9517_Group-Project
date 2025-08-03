@@ -1,4 +1,5 @@
 from .segmentation_module import SegLitModule
 from .smp_module import SMPLitModule
+from .u2net_module import U2netLitModule
 
-__all__ = ["SegLitModule", "SMPLitModule", "freeze_smp_encoder_layers"]
+__all__ = ["SegLitModule", "SMPLitModule", "U2netLitModule"]

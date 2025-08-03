@@ -4,6 +4,8 @@
 torchmetrics==1.8.0
 tensorboardx==2.6.4
 
+lightning[pytorch-extra]
+
 # Formatters
 ruff==0.12.5
 
