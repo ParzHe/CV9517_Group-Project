@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
@@ -16,10 +17,12 @@ from models import FreezeSMPEncoderUtils, modes_list, encoders_list
 
 from rich import print
 
+torch.set_float32_matmul_precision('high')
+
 TARGET_SIZE = 256
 BATCH_SIZE = 32  # Default 32, if oom, try 16 or 8
 ACCUMULATE_GRAD_BATCHES = 1  # Default 1, if oom, try 2 or 4
-VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
+VERSION_SUFFIX = "test"  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision for training
 LOSS1 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.FocalLoss(mode='binary')
@@ -33,8 +36,6 @@ MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 arch_list = modes_list()
 encoder_only = "all"  # Set to "all" to use all available encoders, or specify a specific encoder name
 modality_list = ["merged", "rgb", "nrg"]
-
-# Initialize callbacks
 
 freeze_tool = FreezeSMPEncoderUtils()
 

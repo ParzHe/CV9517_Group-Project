@@ -11,7 +11,7 @@ class SegLitModule(L.LightningModule):
     def __init__(self, model, in_channels=3,
                  loss1 = smp.losses.JaccardLoss(mode='binary', from_logits=True),
                  loss2 = smp.losses.FocalLoss(mode='binary'),
-                 lr=1e-3, use_scheduler=True, **kwargs):
+                 lr=1e-3, use_scheduler=True, target_size=256, **kwargs):
         super().__init__()
         assert model is not None, "Model must be provided"
 
@@ -40,14 +40,21 @@ class SegLitModule(L.LightningModule):
         self.test_step_outputs = []
         
         if self.hparams.in_channels is not None:
-            self.example_input_array = torch.randn(1, self.hparams.in_channels, 256, 256)  # Example input tensor for logging
+            self.example_input_array = torch.randn(1, self.hparams.in_channels, target_size, target_size).to(self.device)  # Example input tensor for logging
         else:
-            self.example_input_array = torch.randn(1, 3, 256, 256)
+            self.example_input_array = torch.randn(1, 3, target_size, target_size).to(self.device)
 
     def _loss_fn(self, logits_mask, mask):
         """
         Optimized loss function computation.
         """
+    
+        if logits_mask.shape != mask.shape:
+            if mask.ndim == 3 and logits_mask.ndim == 4:
+                mask = mask.unsqueeze(1)
+
+        assert logits_mask.shape == mask.shape, "Logits and mask must have the same shape"
+        
         if self._loss_strategy == "combined":
             return self.loss_fn1(logits_mask, mask) + self.loss_fn2(logits_mask, mask)
         elif self._loss_strategy == "single":
