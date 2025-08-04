@@ -1,5 +1,6 @@
 # data/dataset.py
 
+import os
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
@@ -7,12 +8,13 @@ from .transforms import SegmentationTransform
 from rich import print
 
 class AerialDeadTreeSegDataset(Dataset):
-    def __init__(self, rgb_paths, nrg_paths, mask_paths, transform=None, modality="merged"):
+    def __init__(self, rgb_paths, nrg_paths, mask_paths, transform=None, modality="merged", mode="train"):
         self.rgb_paths  = rgb_paths
         self.nrg_paths  = nrg_paths
         self.mask_paths = mask_paths
         self.transform  = transform
         self.modality    = modality
+        self.mode        = mode
         
         if self.transform is None:
             print("[yellow]Warning: No transform provided. Using default SegmentationTransform.[/yellow]")
@@ -33,15 +35,22 @@ class AerialDeadTreeSegDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load mask
-        mask = Image.open(self.mask_paths[idx]).convert("L")
-        
+        mask_path = self.mask_paths[idx]
+        mask = Image.open(mask_path).convert("L")
+
         # Load image based on the specified modality
         img = self._load_strategies[self.modality](idx)
 
         img, mask = self.transform(img, mask)
-
-        return {"image": img, "mask": mask}
         
+        if self.mode == "test":
+            suffix = os.path.basename(mask_path).split("_", 1)[1]
+            name = str(suffix).split(".", 1)[0]
+            return {"image": img, "mask": mask, "name": name}
+        else:
+            return {"image": img, "mask": mask}
+
+
     def _load_rgb(self, idx):
         """Load RGB image"""
         return Image.open(self.rgb_paths[idx]).convert("RGB")

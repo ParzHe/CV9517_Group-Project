@@ -16,9 +16,9 @@ import pandas as pd
 
 class AerialDeadTreeSegDataModule(LightningDataModule):
     def __init__(self, val_split=0.1, test_split=0.2, seed=42, modality="merged", 
-                 batch_size=32, num_workers=0, target_size=224):
+                 batch_size=32, num_workers=0, target_size=224, mode="train"):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=["mode"])
         
         if val_split < 0 or test_split < 0 or val_split + test_split >= 1:
             raise ValueError("val_split and test_split must be non-negative and their sum must be less than 1.")
@@ -26,6 +26,7 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
         # Calculate splits
         self.train_split = 1 - val_split - test_split
         self.in_channels = 3 if modality in ["rgb", "nrg"] else 4
+        self.mode = mode  # "train", "val", or "test"
 
     def prepare_data(self):
         """Download dataset if not already present"""
@@ -54,7 +55,7 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
             self._val_dataset = self._create_dataset(splits["val"], mode="val")
         
         if stage in ("test", None):
-            self._test_dataset = self._create_dataset(splits["test"], mode="val")
+            self._test_dataset = self._create_dataset(splits["test"], mode="test")
 
     def _split_data(self, rgb_paths, nrg_paths, mask_paths):
         """Split dataset"""
@@ -120,7 +121,7 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
             target_size=self.hparams.target_size,
             mode=mode,
         )
-        return AerialDeadTreeSegDataset(rgb_paths, nrg_paths, mask_paths, transform, self.hparams.modality)
+        return AerialDeadTreeSegDataset(rgb_paths, nrg_paths, mask_paths, transform, self.hparams.modality, mode=mode)
 
     def train_dataloader(self):
         return DataLoader(

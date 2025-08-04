@@ -1,4 +1,8 @@
 import os
+import sys
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
 import argparse
 from glob import glob
 
@@ -11,41 +15,14 @@ from omegaconf import OmegaConf
 from hydra.utils import instantiate
 from tqdm import tqdm
 
-from sam2.modeling.sam2_base import SAM2Base
+from sam2.sam2.modeling.sam2_base import SAM2Base
+from data import AerialDeadTreeSegDataModule
+from utils import make_logger
 
-# ImageNet normalization
-MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+import segmentation_models_pytorch as smp
 
-class EvalDataset(Dataset):
-    def __init__(self, rgb_dir, gt_dir, image_size):
-        self.rgb_paths  = sorted(glob(os.path.join(rgb_dir, "*.png")))
-        self.gt_dir     = gt_dir
-        self.image_size = image_size
-
-    def __len__(self):
-        return len(self.rgb_paths)
-
-    def __getitem__(self, idx):
-        rgb_path = self.rgb_paths[idx]
-        suffix   = os.path.basename(rgb_path).split("_",1)[1]
-        gt_path  = os.path.join(self.gt_dir, f"mask_{suffix}")
-
-        rgb = cv2.cvtColor(cv2.imread(rgb_path), cv2.COLOR_BGR2RGB)
-        gt  = cv2.imread(gt_path, cv2.IMREAD_GRAYSCALE)
-
-        rgb = cv2.resize(rgb, (self.image_size, self.image_size), interpolation=cv2.INTER_LINEAR)
-        gt  = cv2.resize(gt,  (self.image_size, self.image_size), interpolation=cv2.INTER_NEAREST)
-
-        # normalize to [0,1], then ImageNet standardize
-        img = rgb.astype(np.float32) / 255.0
-        img = (img - MEAN) / STD
-        img_tensor = torch.from_numpy(img).permute(2,0,1)
-
-        # return binary mask as numpy
-        gt_mask = gt > 127
-
-        return img_tensor, gt_mask, os.path.basename(rgb_path)
+config_dir = os.path.join(project_root, "sam2", "sam2", "configs", "sam2.1")
+checkpoints_dir = os.path.join(project_root, "checkpoints", "SAM2_finetune")
 
 def load_model(config_path, checkpoint_path, device):
     cfg = OmegaConf.load(config_path)
@@ -62,16 +39,20 @@ def load_model(config_path, checkpoint_path, device):
         state = ckpt
     model.load_state_dict(state, strict=False)
     model.to(device).eval()
-    return model
+    return model, cfg
 
-def evaluate(model, dataset, device):
-    loader = DataLoader(dataset, batch_size=1, shuffle=False)
+def evaluate(model, dataloader, image_size, device, logger=None):
+    if logger is None:
+        logger = make_logger(name="SAM2_Evaluation", log_path=os.path.join(checkpoints_dir, "evaluation.log"))
+    loader = dataloader
     preds, gts, names = [], [], []
 
     with torch.no_grad():
-        for img, gt_mask, name in tqdm(loader, desc="Eval"):
+        for batch in tqdm(loader, desc="Eval"):
             # img: [1,3,H,W], gt_mask: numpy boolean [H,W]
-            img = img.to(device)
+            img = batch["image"].to(device)
+            gt_mask = batch["mask"].to(device)
+            name = batch["name"]
 
             out = model.forward_image(img)
             fpn_feats = out["backbone_fpn"]
@@ -84,6 +65,9 @@ def evaluate(model, dataset, device):
                 dtype=image_embeddings.dtype, device=device
             )
             dense_pe = model.sam_prompt_encoder.get_dense_pe().to(device)
+            B, C, H, W = image_embeddings.size()
+            if dense_pe.shape[-2:] != (H, W):
+                dense_pe = F.interpolate(dense_pe, size=(H, W), mode='bilinear', align_corners=False)
 
             high_res_feats = fpn_feats[-4:-1]
 
@@ -99,62 +83,105 @@ def evaluate(model, dataset, device):
 
             prob_map = F.interpolate(
                 torch.sigmoid(masks_low_logits),
-                size=(dataset.image_size, dataset.image_size),
+                size=(image_size, image_size),
                 mode="nearest"
             )[0,0].cpu().numpy()
 
+            if isinstance(gt_mask, torch.Tensor):
+                # Remove batch dimension and squeeze extra dimensions if present
+                gt_np = gt_mask[0].cpu().numpy()
+                # Ensure gt_np is 2D
+                while gt_np.ndim > 2:
+                    gt_np = gt_np.squeeze()
+                # Resize to match prediction size if needed
+                if gt_np.shape != (image_size, image_size):
+                    gt_np = cv2.resize(gt_np.astype(np.float32), (image_size, image_size), interpolation=cv2.INTER_NEAREST)
+            else:
+                gt_np = gt_mask[0]
+                while gt_np.ndim > 2:
+                    gt_np = gt_np.squeeze()
+                if gt_np.shape != (image_size, image_size):
+                    gt_np = cv2.resize(gt_np.astype(np.float32), (image_size, image_size), interpolation=cv2.INTER_NEAREST)
+
             preds.append(prob_map)
-            gts.append(gt_mask[0] if isinstance(gt_mask, np.ndarray) else gt_mask.numpy()[0])
+            gts.append(gt_np)
             names.append(name[0] if isinstance(name, list) else name)
+    
+    all_preds = np.stack(preds)
+    all_gts = np.stack(gts)
+    
+    all_preds_tensor = torch.from_numpy(all_preds).unsqueeze(1).float()
+    all_gts_tensor = torch.from_numpy(all_gts.astype(np.float32)).unsqueeze(1)
 
     # threshold search
     best_iou, best_thr = 0.0, 0.5
+    logger.info("Searching for best IoU threshold...")
     for thr in np.linspace(0.3, 0.7, num=9):
-        ious = []
-        for p_map, g_map in zip(preds, gts):
-            p_bin = p_map > thr
-            g_bin = g_map
-            if not g_bin.any() and not p_bin.any():
-                iou = 1.0
-            else:
-                inter = (p_bin & g_bin).sum()
-                union = (p_bin | g_bin).sum()
-                iou = float(inter) / float(union) if union > 0 else 0.0
-            ious.append(iou)
-        m = float(np.mean(ious))
-        if m > best_iou:
-            best_iou, best_thr = m, thr
-
-    print(f"Best IoU = {best_iou:.4f} at threshold {best_thr:.2f}\n")
+        tp, fp, fn, tn = smp.metrics.get_stats(
+            all_preds_tensor, 
+            all_gts_tensor.long(), 
+            mode='binary', 
+            threshold=thr
+        )
+        
+        # Calculate IoU
+        iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
+        
+        if iou > best_iou:
+            best_iou, best_thr = iou.item(), thr
+            
+    logger.info(f"Best IoU = {best_iou:.4f} at threshold {best_thr:.2f}\n")
 
     # print per-image IoU at best_thr
-    print("Per-image IoU:")
-    for name, p_map, g_map in zip(names, preds, gts):
-        p_bin = p_map > best_thr
-        g_bin = g_map
-        if not g_bin.any() and not p_bin.any():
-            iou_i = 1.0
-        else:
-            inter = (p_bin & g_bin).sum()
-            union = (p_bin | g_bin).sum()
-            iou_i = float(inter) / float(union) if union > 0 else 0.0
-        print(f"{name}: {iou_i:.4f}")
-
-    return best_iou, best_thr
+    # Calculate all metrics at best threshold
+    tp, fp, fn, tn = smp.metrics.get_stats(
+        all_preds_tensor.long(), 
+        all_gts_tensor.long(), 
+        mode='binary', 
+        threshold=best_thr
+    )
+    
+    imagewise_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro-imagewise")
+    dataset_iou = smp.metrics.iou_score(tp, fp, fn, tn, reduction="micro")
+    accuracy = smp.metrics.accuracy(tp, fp, fn, tn, reduction="micro-imagewise")
+    f1_score = smp.metrics.f1_score(tp, fp, fn, tn, reduction="micro-imagewise")
+    f2_score = smp.metrics.fbeta_score(tp, fp, fn, tn, beta=2, reduction="micro-imagewise")
+    precision = smp.metrics.precision(tp, fp, fn, tn, reduction="micro-imagewise")
+    recall = smp.metrics.recall(tp, fp, fn, tn, reduction="micro-imagewise")
+    sensitivity = smp.metrics.sensitivity(tp, fp, fn, tn, reduction="micro-imagewise")
+    specificity = smp.metrics.specificity(tp, fp, fn, tn, reduction="micro-imagewise")
+    
+    logger.info(f"Image-wise IoU: {imagewise_iou:.4f}")
+    logger.info(f"Dataset IoU: {dataset_iou:.4f}")
+    logger.info(f"Accuracy: {accuracy:.4f}")
+    logger.info(f"F1 Score: {f1_score:.4f}")
+    logger.info(f"F2 Score: {f2_score:.4f}")
+    logger.info(f"Precision: {precision:.4f}")
+    logger.info(f"Recall: {recall:.4f}")
+    logger.info(f"Sensitivity: {sensitivity:.4f}")
+    logger.info(f"Specificity: {specificity:.4f}")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config",     default="sam2/sam2.1_hiera_b+.yaml")
-    parser.add_argument("--checkpoint", default="SAM2_finetune/SAM2_finetune.pkl")
-    parser.add_argument("--rgb_dir",    default="sam2/data/RGB_images")
-    parser.add_argument("--gt_dir",     default="sam2/data/masks")
+    parser.add_argument("--config",     default=os.path.join(config_dir, "sam2.1_hiera_b+.yaml"))
+    parser.add_argument("--checkpoint", default=os.path.join(checkpoints_dir, "SAM2_finetune.pkl"))
     parser.add_argument("--image_size", type=int,   default=1024)
     parser.add_argument("--device",     default="cuda")
     args = parser.parse_args()
+    
+    data_module = AerialDeadTreeSegDataModule(
+        val_split=0.1, test_split=0.2, seed=42,
+        modality="rgb",  # in_channels=3 for RGB
+        batch_size=1,
+        num_workers=int(os.cpu_count() - 2) if os.cpu_count() is not None else 0,
+        target_size=args.image_size
+    )
+    data_module.prepare_data()
+    data_module.setup()
 
-    dataset = EvalDataset(args.rgb_dir, args.gt_dir, args.image_size)
-    model   = load_model(args.config, args.checkpoint, args.device)
-    evaluate(model, dataset, args.device)
+    test_dataloader = data_module.test_dataloader()
+    model, _   = load_model(args.config, args.checkpoint, args.device)
+    evaluate(model, test_dataloader, args.image_size, args.device)
 
 if __name__ == "__main__":
     main()
