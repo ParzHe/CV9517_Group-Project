@@ -4,7 +4,30 @@ The goal of this group project is to develop and compare different computer visi
 
 This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org) and [![PyTorch Lightning](https://img.shields.io/badge/PyTorch_Lightning-2.5.2-792ee5?logo=lightning&logoColor=white&style=flat-square)](https://lightning.ai/docs/pytorch/stable/), and it includes over 60+ deep learning methods for semantic segmentation powered by [![Use](https://img.shields.io/badge/uses-segmentation__models.pytorch-blue?logo=github&style=flat-square)](https://github.com/qubvel-org/segmentation_models.pytorch). And, we also try zero-shot and fine-tuning with [![SAM2](https://img.shields.io/badge/uses-SAM2_by_Meta-black?logo=github&logoColor=white&style=flat-square)](https://github.com/facebookresearch/sam2) .
 
-[TOC]
+- [**COMP9517 Computer Vision 25T2 Group Project**](#comp9517-computer-vision-25t2-group-project)
+  - [**0. Project Zotero Library**](#0-project-zotero-library)
+  - [**1. ProjectCode Structure**](#1-projectcode-structure)
+  - [**2. Setup Environment Instructions**](#2-setup-environment-instructions)
+    - [2.1 Clone the repository](#21-clone-the-repository)
+    - [2.2 Set up environment](#22-set-up-environment)
+      - [2.2.1 Setup CVers Environment with Conda (for Pytorch Lightning, ADA-Net, and SAM2)](#221-setup-cvers-environment-with-conda-for-pytorch-lightning-ada-net-and-sam2)
+      - [2.2.2 Setup for SAM2 (Optional)](#222-setup-for-sam2-optional)
+    - [2.3 **Activate the environment**](#23-activate-the-environment)
+  - [**3. Project Methods**](#3-project-methods)
+    - [3.1 SMP (Segmentation Models PyTorch)](#31-smp-segmentation-models-pytorch)
+      - [Applied Architectures](#applied-architectures)
+      - [Applied Feature Extractors (Encoders)](#applied-feature-extractors-encoders)
+    - [3.2 SAM2 （Zero-Shot Segmentation \& Fine-Tuning）](#32-sam2-zero-shot-segmentation--fine-tuning)
+  - [**4. Training \& Testing**](#4-training--testing)
+    - [4.1 Dataset \& Pre-trained Weights](#41-dataset--pre-trained-weights)
+    - [4.2 Training](#42-training)
+      - [4.2.1 SMP (Segmentation Models PyTorch)](#421-smp-segmentation-models-pytorch)
+      - [4.2.2 SAM2 (Fine-Tuning)](#422-sam2-fine-tuning)
+    - [4.3 Testing](#43-testing)
+      - [4.3.1 SMP (Segmentation Models PyTorch)](#431-smp-segmentation-models-pytorch)
+      - [4.3.2 SAM2 (Zero-Shot Segmentation \& Fine-Tuning)](#432-sam2-zero-shot-segmentation--fine-tuning)
+  - [**5. Future Work**](#5-future-work)
+
 
 ## **0. Project Zotero Library**
 
@@ -202,6 +225,9 @@ python scripts/train_smp.py
 
 This will train all the architectures and feature extractors specified in the `arch_list` and `encoder_only` variables in the `scripts/train_smp.py` file. The training will be performed on the merged, RGB and NRG modalities by default.
 
+> [!TIP]
+> You can modify the `BATCH_SIZE` and `ACCUMULATE_GRAD_BATCHES` variables in the `scripts/train_smp.py` file to adjust the batch size and gradient accumulation. The default values are `BATCH_SIZE = 32` and `ACCUMULATE_GRAD_BATCHES = 1`. If you encounter out-of-memory (OOM) errors, you can try reducing the batch size and increasing the gradient accumulation.
+
 **4.2.1.1 Train on a specific architecture or feature extractor:**
 
 If you want to train a specific architecture or feature extractor, you can modify the `arch_list` and `encoder_only` variables in the `scripts/train_smp.py` file. For example, to train the `Unet` architecture with `DenseNet161` as the feature extractor, you can set:
@@ -252,9 +278,6 @@ Where:
 >[!NOTE]
 > 1. The training script will automatically search the suggested learning rate using the `find_lr` method from the `lightning` library.
 > 2. The training script will automatically log the training and validation metrics to the `logs/` directory, which can be viewed using TensorBoard. And, logging summary will also be done in the certain `checkpoints/` directory.
-
-> [!TIP]
-> You can modify the `BATCH_SIZE` and `ACCUMULATE_GRAD_BATCHES` variables in the `scripts/train_smp.py` file to adjust the batch size and gradient accumulation. The default values are `BATCH_SIZE = 32` and `ACCUMULATE_GRAD_BATCHES = 1`. If you encounter out-of-memory (OOM) errors, you can try reducing the batch size and increasing the gradient accumulation.
 
 #### 4.2.2 SAM2 (Fine-Tuning)
 To fine-tune the SAM2 model, you can use the following command in the root directory of the project:
