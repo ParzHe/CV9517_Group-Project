@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
@@ -17,6 +18,8 @@ from rich import print
 
 from sam2.sam2.modeling.sam2_base import SAM2Base
 
+torch.set_float32_matmul_precision('high')
+
 TARGET_SIZE = 1024
 BATCH_SIZE = 1  # Image_pe should have size 1 in batch dim
 ACCUMULATE_GRAD_BATCHES = 1  
@@ -26,8 +29,8 @@ LOSS1 = smp.losses.LovaszLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 EARLY_STOP_PATIENCE = 30
 MAX_EPOCHS = 100
-MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
-MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
+MIN_LR = 1e-6 # Minimum learning rate for the learning rate finder
+MAX_LR = 0.01  # Maximum learning rate for the learning rate finder
 
 SAM2_prefix = "sam2.1"
 sam2_dir = os.path.join(project_root, "sam2")
@@ -94,7 +97,7 @@ def run_train():
             # Initialize callbacks
             callback_list = callbacks(model_full_name, EARLY_STOP_PATIENCE, version)
             
-            tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"{model_full_name}_{modality}", version=version)
+            tb_logger = TensorBoardLogger(paths.tensorboard_log_dir,  name=f"{model_full_name}", version=version)
             
             # Initialize the trainer
             trainer = L.Trainer(

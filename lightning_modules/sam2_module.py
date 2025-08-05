@@ -23,7 +23,8 @@ class SAM2LitModule(SegLitModule):
         self.image_size = cfg.model.image_size
         super().__init__(model=model, in_channels=3, loss1=loss1, loss2=loss2, lr=lr, use_scheduler=use_scheduler, target_size=1024, **kwargs)
         self.save_hyperparameters(ignore=["cfg_path", "ckpt_path", "loss1", "loss2", "lr", "use_scheduler"])
-    
+        self.automatic_optimization = False
+        
     # Load and freeze
     def _load_cfg_model(self, cfg_path, ckpt_path, device):
         cfg   = OmegaConf.load(cfg_path)
@@ -195,3 +196,51 @@ class SAM2LitModule(SegLitModule):
             "fn": fn,
             "tn": tn,
         }
+    
+    def training_step(self, batch, batch_idx):
+        opt = self.optimizers()
+        opt.zero_grad()
+        train_loss_info = self.shared_step(batch, TRAIN_STAGE)
+        loss = train_loss_info["loss"]
+        self.manual_backward(loss)
+        opt.step()
+        
+        # append the metics of each step to the
+        self.training_step_outputs.append(train_loss_info)
+        return train_loss_info
+        
+    def on_train_epoch_end(self):
+        self.shared_epoch_end(self.training_step_outputs, TRAIN_STAGE)
+        # empty set output list
+        self.training_step_outputs.clear()
+        
+        sch = self.lr_schedulers()
+        if isinstance(sch, lr_scheduler.ReduceLROnPlateau):
+            sch.step(self.trainer.callback_metrics[f"per_image_iou/{VAL_STAGE}"])
+        
+        return
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(
+            self.parameters(),
+            lr=self.lr,
+            weight_decay=1e-4,
+        )
+
+        if not self.use_scheduler:
+            return optimizer
+
+        if hasattr(self.trainer, 'max_epochs') and int(self.trainer.max_epochs) > 0:
+            scheduler = {
+                'scheduler': lr_scheduler.ReduceLROnPlateau(
+                    optimizer,
+                    mode="max",
+                    factor=0.5,
+                    patience=3,
+                    min_lr=1e-6
+                ),
+                'interval': 'epoch',
+            }
+            return [optimizer], [scheduler]
+        else:
+            return [optimizer]
