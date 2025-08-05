@@ -1,7 +1,7 @@
 from rich.logging import RichHandler
 import logging
 
-def make_logger(name, log_path):
+def make_logger(name, log_path, file_mode='a', show_level_name=False):
     """Create a logger with a specified name and log file path.
     Args:
         name (str): The name of the logger.
@@ -19,12 +19,19 @@ def make_logger(name, log_path):
         logger.removeHandler(handler)
         
     rich_handler = RichHandler(show_time=False, rich_tracebacks=True, markup=True)
-    file_handler = logging.FileHandler(log_path, encoding='utf-8')
-    
-    formatter = logging.Formatter(
-        fmt="[%(asctime)s]  %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    file_handler = logging.FileHandler(log_path, mode=file_mode, encoding='utf-8')
+
+    if show_level_name:
+        formatter = logging.Formatter(
+            fmt="[%(asctime)s] [%(levelname)s]  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+    else:
+        formatter = logging.Formatter(
+            fmt="[%(asctime)s]  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        
     file_handler.setFormatter(formatter)
     
     logger.addHandler(rich_handler)

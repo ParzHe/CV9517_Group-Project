@@ -5,7 +5,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, RichProgressBar, RichModelSummary, Timer
+from lightning.pytorch.callbacks import Timer
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from data import AerialDeadTreeSegDataModule
@@ -22,7 +22,7 @@ torch.set_float32_matmul_precision('high')
 TARGET_SIZE = 256
 BATCH_SIZE = 32  # Default 32, if oom, try 16 or 8
 ACCUMULATE_GRAD_BATCHES = 1  # Default 1, if oom, try 2 or 4
-VERSION_SUFFIX = "test"  # Suffix for the version, can be changed as needed
+VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision for training
 LOSS1 = smp.losses.JaccardLoss(mode='binary', from_logits=True)
 LOSS2 = smp.losses.FocalLoss(mode='binary')
@@ -30,7 +30,7 @@ EARLY_STOP_PATIENCE = 30
 FREEZE_ENCODER_LAYERS = False  # Set to True if you want to freeze encoder layers
 FREEZE_ENCODER_LAYERS_RANGE = (0, 1)  # Range of layers to freeze, if applicable
 MAX_EPOCHS = 100
-MIN_LR = 1e-3 # Minimum learning rate for the learning rate finder
+MIN_LR = 1e-4  # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
 arch_list = modes_list()
@@ -57,7 +57,8 @@ def run_train():
                 log_path = os.path.join(log_dir, "train.log")
                 log = make_logger(
                     name=f"smp_{encoder_name}_{arch}_{modality}",
-                    log_path=log_path
+                    log_path=log_path,
+                    file_mode='w'
                 )
 
                 print()
@@ -109,9 +110,10 @@ def run_train():
                 # Test the model
                 log.info("")
                 log.info(f"Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality")
-                trainer.test(datamodule=data_module,ckpt_path="best")
+                test_results = trainer.test(datamodule=data_module, ckpt_path="best")
                 log.info(f"[green]Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
-
+                log.info(f"Test results for {model_name} on {modality}: \n{test_results}")
+                
                 log.info("")
                 log.info(f"Total [bold]training[/bold] stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
                 log.info(f"Total [bold]validation[/bold] stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")
