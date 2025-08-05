@@ -23,6 +23,7 @@ import segmentation_models_pytorch as smp
 
 config_dir = os.path.join(project_root, "sam2", "sam2", "configs", "sam2.1")
 checkpoints_dir = os.path.join(project_root, "checkpoints", "SAM2_finetune")
+result_dir = os.path.join(project_root, "outputs", "SAM2_ft_inference")
 
 def load_model(config_path, checkpoint_path, device):
     cfg = OmegaConf.load(config_path)
@@ -43,7 +44,7 @@ def load_model(config_path, checkpoint_path, device):
 
 def evaluate(model, dataloader, image_size, device, logger=None):
     if logger is None:
-        logger = make_logger(name="SAM2_Evaluation", log_path=os.path.join(checkpoints_dir, "evaluation.log"))
+        logger = make_logger(name="SAM2_Evaluation", log_path=os.path.join(result_dir, "evaluation.log"))
     loader = dataloader
     preds, gts, names = [], [], []
 
@@ -160,6 +161,9 @@ def evaluate(model, dataloader, image_size, device, logger=None):
     logger.info(f"Recall: {recall:.4f}")
     logger.info(f"Sensitivity: {sensitivity:.4f}")
     logger.info(f"Specificity: {specificity:.4f}")
+    
+    print("[green]Fine-tuned SAM2 evaluation completed successfully![/green]")
+    print(f"Results saved to: [bold]{result_dir}[/bold]")
 
 def main():
     parser = argparse.ArgumentParser()
