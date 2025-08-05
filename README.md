@@ -200,7 +200,7 @@ Refer to:
 Dev Environment: `CVers` or other environments as needed 
 
 > [!NOTE]
-> You need to manually clone the SAM2 repository and download the model weights as described in [2.2.2 Subsection](#222-setup-for-sam2-optional22-setup-cvers-environment-with-conda-for-pytorch-lightning-and-ada-net-and-sam2).
+> You need to manually clone the SAM2 repository and download the model weights as described in [2.2.2 Subsection](#222-setup-for-sam2-optional).
 
 ## **4. Training & Testing**
 
@@ -210,7 +210,7 @@ The code will automatically download the dataset from Kaggle, with the `kagglehu
 
 For Segmentation Models PyTorch, the pre-trained weights will be automatically downloaded. If you want to delete the pre-trained weights, you need to go to the `~/.cache/huggingface/hub` directory to delete as you wish.
 
-For SAM2, the pre-trained weights should download manually as described in the [2.2.2 Subsection](#222-setup-for-sam2-optional22-setup-cvers-environment-with-conda-for-pytorch-lightning-and-ada-net-and-sam2) section.
+For SAM2, the pre-trained weights should download manually as described in the [2.2.2 Subsection](#222-setup-for-sam2-optional).
 
 ### 4.2 Training
 
