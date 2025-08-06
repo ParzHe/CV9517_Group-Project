@@ -77,6 +77,7 @@ def run_train():
                     in_channels=data_module.in_channels,
                     loss1=LOSS1,
                     loss2=LOSS2,
+                    target_size=TARGET_SIZE
                 )
                 # Future work: Fine-tune feature extractor
                 if FREEZE_ENCODER_LAYERS:
