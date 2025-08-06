@@ -1,3 +1,7 @@
+# scripts/sam2_ft_lightning.py
+# (Future Work)
+# This script is for training the SAM2 model on the Aerial Dead Tree Segmentation dataset using PyTorch Lightning.
+
 import os
 import sys
 import torch

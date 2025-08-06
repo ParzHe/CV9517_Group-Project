@@ -1,3 +1,6 @@
+# scripts/test_sam2_ft.py
+# This script is for testing the fine-tuned SAM2 model on the test split part of Aerial Dead Tree Segmentation dataset.
+
 import os
 import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +27,8 @@ import segmentation_models_pytorch as smp
 config_dir = os.path.join(project_root, "sam2", "sam2", "configs", "sam2.1")
 checkpoints_dir = os.path.join(project_root, "checkpoints", "SAM2_finetune")
 result_dir = os.path.join(project_root, "outputs", "SAM2_ft_inference")
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir, exist_ok=True)
 
 def load_model(config_path, checkpoint_path, device):
     cfg = OmegaConf.load(config_path)

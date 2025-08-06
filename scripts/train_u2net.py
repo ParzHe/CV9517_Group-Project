@@ -1,3 +1,6 @@
+# scripts/train_u2net.py
+# This script is for training the U2Net model for semantic segmentation (Future Work).
+
 import os
 import sys
 import torch

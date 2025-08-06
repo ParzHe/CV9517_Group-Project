@@ -1,3 +1,6 @@
+# scripts/sam2_zero_shot.py
+# This script is for zero-shot inference using the SAM2 model on the whole Aerial Dead Tree Segmentation dataset.
+
 import os
 import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

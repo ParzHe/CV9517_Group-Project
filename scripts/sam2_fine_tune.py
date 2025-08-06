@@ -1,3 +1,6 @@
+# scripts/sam2_fine_tune.py
+# This script is for fine-tuning the SAM2 model on the Aerial Dead Tree Segmentation dataset.
+
 import os
 import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

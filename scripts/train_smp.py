@@ -1,3 +1,6 @@
+# scripts/train_smp.py
+# This script is for training Segmentation Models PyTorch (SMP) models on the train and val part of Aerial Dead Tree Segmentation dataset.
+
 import os
 import sys
 import torch
@@ -42,6 +45,7 @@ freeze_tool = FreezeSMPEncoderUtils()
 def run_train():
     for modality in modality_list:
         version = f"{modality}_{TARGET_SIZE}" if VERSION_SUFFIX == "" else f"{modality}_{TARGET_SIZE}_{VERSION_SUFFIX}"
+        # Load different data modules based on modality
         data_module = AerialDeadTreeSegDataModule(
             val_split=0.1, test_split=0.2, seed=42,
             modality=modality, # in_channels=4. If modality is "merged", it will use 4 channels (RGB + NIR); Otherwise, it will use 3 channels (RGB).
@@ -50,6 +54,7 @@ def run_train():
             target_size=TARGET_SIZE
         )
         
+        # Train for each architecture and encoder
         for arch in arch_list:
             for encoder_name in encoders_list(arch, only_available=encoder_only):
                 log_dir = os.path.join(paths.checkpoint_dir, f"smp_{encoder_name}_{arch}", version)
@@ -65,6 +70,7 @@ def run_train():
                 print("[dim]-[/dim]" * 60)
                 log.info(f"Start Training [bold]{encoder_name}-{arch} [/bold] on [bold] {modality} [/bold] modality")
 
+                # Initialise the model
                 model = SMPLitModule(
                     arch=arch,
                     encoder_name=encoder_name,
@@ -72,6 +78,7 @@ def run_train():
                     loss1=LOSS1,
                     loss2=LOSS2,
                 )
+                # Future work: Fine-tune feature extractor
                 if FREEZE_ENCODER_LAYERS:
                     freeze_tool(model, encoder_name, layers_range=FREEZE_ENCODER_LAYERS_RANGE)
                 
@@ -96,13 +103,17 @@ def run_train():
                 trainer.callbacks.append(timer)
                 
                 tuner = Tuner(trainer)
+                
+                # Learning rate finder of PyTorch Lightning
                 lr_finder = tuner.lr_find(model, datamodule=data_module,
                                         min_lr=MIN_LR, max_lr=MAX_LR,
                                         num_training=100, early_stop_threshold=4)
+                
                 log.info(f"Learning rate finder suggestion: {lr_finder.suggestion()}")
                 Cur_init_lr = model.hparams.lr if hasattr(model.hparams, 'lr') else model.lr
                 log.info(f"Current initial learning rate update to suggested: [bold]{Cur_init_lr}[/bold]")
 
+                # Fit the model
                 trainer.fit(model, datamodule=data_module)
                 
                 log.info(f"[green]Training [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
@@ -114,6 +125,7 @@ def run_train():
                 log.info(f"[green]Testing [bold]{encoder_name}-{arch}[/bold] on {modality} modality completed[/green]")
                 log.info(f"Test results for {model_name} on {modality}: \n{test_results}")
                 
+                # Time summary
                 log.info("")
                 log.info(f"Total [bold]training[/bold] stage time: [bold]{timer.time_elapsed('train')} seconds[/bold].")
                 log.info(f"Total [bold]validation[/bold] stage time: [bold]{timer.time_elapsed('validate')} seconds[/bold].")

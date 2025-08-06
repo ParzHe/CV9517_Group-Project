@@ -1,3 +1,6 @@
+# scripts/test_smp.py
+# This script is for testing Segmentation Models PyTorch (SMP) models on the Aerial Dead Tree Segmentation dataset.
+
 import os
 import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
