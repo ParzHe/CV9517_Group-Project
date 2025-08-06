@@ -172,24 +172,24 @@ def run_test():
         csv_path = os.path.join(output_dir, csv_filename)
         
         df.to_csv(csv_path, index=False, float_format='%.4f')
-        print(f"[green]Test results saved to: [bold]{csv_path}[/bold][/green]")
+        main_log.info(f"[green]Test results saved to: [bold]{csv_path}[/bold][/green]")
 
         # Display summary statistics
-        print("\n[bold]Test Results Summary of modalities:[/bold]")
-        print(df.groupby(['Modality']).agg({
+        main_log.info("\n[bold]Test Results Summary of modalities:[/bold]")
+        main_log.info(df.groupby(['Modality']).agg({
             'Per_Image_IoU': ['mean', 'std', 'max'],
             'Dataset_IoU': ['mean', 'std', 'max'],
         }).round(4))
 
-        print("\n[bold]Test Results Summary of architectures:[/bold]")
-        print(df.groupby(['Architecture']).agg({
+        main_log.info("\n[bold]Test Results Summary of architectures:[/bold]")
+        main_log.info(df.groupby(['Architecture']).agg({
             'Per_Image_IoU': ['mean', 'std', 'max'],
             'Dataset_IoU': ['mean', 'std', 'max'],
             'Test_Time_Seconds': ['mean', 'std', 'max']
         }).round(4))
         
-        print("\n[bold]Test Results Summary of feature extraction backbones:[/bold]")
-        print(df.groupby(['Encoder']).agg({
+        main_log.info("\n[bold]Test Results Summary of feature extraction backbones:[/bold]")
+        main_log.info(df.groupby(['Encoder']).agg({
             'Per_Image_IoU': ['mean', 'std', 'max'],
             'Dataset_IoU': ['mean', 'std', 'max'],
             'Test_Time_Seconds': ['mean', 'std', 'max']
@@ -197,7 +197,7 @@ def run_test():
 
         return df
     else:
-        print("[red]No test results to save![/red]")
+        main_log.info("[red]No test results to save![/red]")
         return None
 
 if __name__ == "__main__":
