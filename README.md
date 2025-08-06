@@ -10,7 +10,7 @@ This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTor
   - [**2. Setup Environment Instructions**](#2-setup-environment-instructions)
     - [2.1 Clone the repository](#21-clone-the-repository)
     - [2.2 Set up environment](#22-set-up-environment)
-      - [2.2.1 Setup CVers Environment with Conda (for Pytorch Lightning, ADA-Net, and SAM2)](#221-setup-cvers-environment-with-conda-for-pytorch-lightning-ada-net-and-sam2)
+      - [2.2.1 Setup Environment with Conda](#221-setup-environment-with-conda)
       - [2.2.2 Setup for SAM2 (Optional)](#222-setup-for-sam2-optional)
     - [2.3 **Activate the environment**](#23-activate-the-environment)
   - [**3. Project Methods**](#3-project-methods)
@@ -103,7 +103,7 @@ We suggest you to use Linux for the trying. If you are using Windows, we suggest
 
 If you do not have `conda` installed, you can install it from the [Anaconda website](https://www.anaconda.com/download).
 
-#### 2.2.1 Setup CVers Environment with Conda (for Pytorch Lightning, ADA-Net, and SAM2)
+#### 2.2.1 Setup Environment with Conda
 
 - Create a `CVers` conda environment using the provided `environment.yaml` file:
 
@@ -169,7 +169,7 @@ You can find the papers by directly clicking the architecture and feature extrac
 - **[PSPNet](https://ieeexplore.ieee.org/document/8100143)**
 - **[PAN](https://arxiv.org/abs/1805.10180)**: Do not support `DenseNet` as the feature extractor (encoder).
 - **[DeepLabV3](https://arxiv.org/abs/1706.05587)**: Do not support `DenseNet` as the feature extractor (encoder).
-- **[DeepLabV3+](https://link.springer.com/chapter/10.1007/978-3-030-01234-2_4)**: Do not support `DenseNet` as the feature extractor (encoder).
+- **[DeepLabV3+](https://link.springer.com/chapter/10.1007/978-3-030-01234-2_49)**: Do not support `DenseNet` as the feature extractor (encoder).
 - **[UperNet](https://link.springer.com/chapter/10.1007/978-3-030-01228-1_26)**
 - **[SegFormer](https://proceedings.neurips.cc/paper/2021/hash/64f1f27bf1b4ec22924fd0acb550c235-Abstract.html)**
 
