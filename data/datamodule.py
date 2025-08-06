@@ -1,4 +1,5 @@
 # data/datamodule.py
+# This script defines the data module for the Aerial Dead Tree Segmentation dataset, integrating dataset loading, transformations, and data splitting.
 
 from lightning import LightningDataModule
 from .utils import download_dataset
@@ -29,7 +30,9 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
         self.mode = mode  # "train", "val", or "test"
 
     def prepare_data(self):
-        """Download dataset if not already present"""
+        """
+        Download dataset from Kaggle if not already present
+        """
         self.dataset_path = download_dataset()
 
     def setup(self, stage=None):
@@ -58,7 +61,18 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
             self._test_dataset = self._create_dataset(splits["test"], mode="test")
 
     def _split_data(self, rgb_paths, nrg_paths, mask_paths):
-        """Split dataset"""
+        """
+        Split dataset if not already split as required.
+        
+        Args:
+            rgb_paths (list): List of RGB image paths.
+            nrg_paths (list): List of NIR image paths.
+            mask_paths (list): List of mask paths.
+        
+        Returns:
+            dict: Dictionary containing train, val, and test splits.
+        """
+        
         total_len = len(rgb_paths)
         train_pct = int(self.train_split * 100)
         val_pct = int(self.hparams.val_split * 100)

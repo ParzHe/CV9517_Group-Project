@@ -1,4 +1,5 @@
 # data/utils.py
+# This script contains data utility functions for downloading the Aerial Dead Tree Segmentation dataset from Kaggle.
 
 import kagglehub
 import os

@@ -1,4 +1,6 @@
 # data/transforms.py
+# This script defines the transformations applied to images and masks in the Aerial Dead Tree Segmentation dataset.
+# We use the Albumentations library for efficient image augmentation and preprocessing.
 
 import albumentations as A
 import numpy as np

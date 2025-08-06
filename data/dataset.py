@@ -1,4 +1,6 @@
 # data/dataset.py
+# This script defines the dataset class for the Aerial Dead Tree Segmentation dataset. 
+# It handles loading images and masks and managing different modalities (RGB, NIR, or merged).
 
 import os
 from torch.utils.data import Dataset
