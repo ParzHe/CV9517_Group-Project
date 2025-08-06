@@ -1,9 +1,10 @@
 # **COMP9517 Computer Vision 25T2 Group Project**
 
-The goal of this group project is to develop and compare different computer vision methods for semantic segmentation of dead trees in aerial images. The dataset used for this project is [![Dataset](https://img.shields.io/badge/uses-Aerial_Imagery_for_Standing_Dead_Tree_Segmentation-orange?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/meteahishali/aerial-imagery-for-standing-dead-tree-segmentation), which contains RGB and NRG (NIR-RG) images.
+The goal of this group project is to develop and compare different deep learning computer vision methods for the semantic segmentation of dead trees in aerial images. The dataset used for this project is [![Dataset](https://img.shields.io/badge/uses-Aerial_Imagery_for_Standing_Dead_Tree_Segmentation-orange?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/meteahishali/aerial-imagery-for-standing-dead-tree-segmentation), which contains RGB and NRG (NIR-RG) images.
 
 This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org) and [![PyTorch Lightning](https://img.shields.io/badge/PyTorch_Lightning-2.5.2-792ee5?logo=lightning&logoColor=white&style=flat-square)](https://lightning.ai/docs/pytorch/stable/), and it includes over 60+ deep learning methods for semantic segmentation powered by [![Use](https://img.shields.io/badge/uses-segmentation__models.pytorch-blue?logo=github&style=flat-square)](https://github.com/qubvel-org/segmentation_models.pytorch). And, we also try zero-shot and fine-tuning with [![SAM2](https://img.shields.io/badge/uses-SAM2_by_Meta-black?logo=github&logoColor=white&style=flat-square)](https://github.com/facebookresearch/sam2) .
 
+**Table of contents:**
 - [**COMP9517 Computer Vision 25T2 Group Project**](#comp9517-computer-vision-25t2-group-project)
   - [**0. Project Zotero Library**](#0-project-zotero-library)
   - [**1. ProjectCode Structure**](#1-projectcode-structure)
