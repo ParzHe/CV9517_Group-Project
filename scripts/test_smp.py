@@ -17,7 +17,7 @@ from lightning_modules import SMPLitModule
 from utils import paths, make_logger
 
 import segmentation_models_pytorch as smp
-from models import modes_list, encoders_list
+from models import archs_list, encoders_list
 
 from rich import print
 import pandas as pd
@@ -30,7 +30,7 @@ VERSION_SUFFIX = ""  # Suffix for the version, can be changed as needed
 PRECISION = "bf16-mixed"  # Use bf16 mixed precision
 EPOCH_WARNING = 50  # If the model has not been trained for at least this many epochs, it will warn
 
-arch_list = modes_list()
+arch_list = archs_list()
 encoder_only = "all"
 modality_list = ["merged", "rgb", "nrg"]
 

@@ -2,7 +2,7 @@ import segmentation_models_pytorch as smp
 from rich import print
 from lightning_modules import SMPLitModule
 
-def modes_list():
+def archs_list():
     arch_list = smp.__all__.copy()  # List of available architectures in segmentation_models_pytorch
     arch_list.remove("datasets")  # Remove datasets as it's not an architecture
     arch_list.remove("encoders")  # Remove encoders as it's not an architecture

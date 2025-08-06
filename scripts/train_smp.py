@@ -16,7 +16,7 @@ from lightning.pytorch.tuner import Tuner
 from lightning_modules import SMPLitModule
 from utils import paths, make_logger, callbacks
 import segmentation_models_pytorch as smp
-from models import FreezeSMPEncoderUtils, modes_list, encoders_list
+from models import FreezeSMPEncoderUtils, archs_list, encoders_list
 
 from rich import print
 
@@ -36,7 +36,7 @@ MAX_EPOCHS = 100
 MIN_LR = 1e-4  # Minimum learning rate for the learning rate finder
 MAX_LR = 0.1  # Maximum learning rate for the learning rate finder
 
-arch_list = modes_list()
+arch_list = archs_list()
 encoder_only = "all"  # Set to "all" to use all available encoders, or specify a specific encoder name
 modality_list = ["merged", "rgb", "nrg"]
 
