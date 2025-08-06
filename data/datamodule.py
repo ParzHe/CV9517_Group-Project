@@ -161,6 +161,8 @@ class AerialDeadTreeSegDataModule(LightningDataModule):
             num_workers=self.hparams.num_workers
         )
     
+    # Future work: Add a predict_dataloader method for inference
+    
     def on_exception(self, exception):
         # clean up state after the trainer faced an exception
         print(f"[red]Exception during data loading: {exception}[/red]")
