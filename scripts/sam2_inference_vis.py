@@ -1,5 +1,9 @@
 
 import os
+import sys
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
 import cv2
 import torch
 import torch.nn.functional as F
@@ -8,17 +12,34 @@ from glob import glob
 from omegaconf import OmegaConf
 from hydra.utils import instantiate
 import matplotlib.pyplot as plt
-import time  
+from datetime import datetime
 
-from sam2.modeling.sam2_base import SAM2Base
+from data import AerialDeadTreeSegDataModule
+from utils import paths, make_logger
 
-# configuration
-CONFIG = "sam2/sam2.1_hiera_b+.yaml"
-CHECKPOINT = "SAM2_finetune/SAM2_finetune.pkl"  
-RGB_DIR = "sam2/data/RGB_images"
-GT_DIR = "sam2/data/masks"
+from sam2.sam2.modeling.sam2_base import SAM2Base
+
+IMAGE_SIZE = 1024  # Default image size for SAM2
+SAM2_DIR = os.path.join(project_root, "sam2")
+CONFIG = os.path.join(SAM2_DIR, "sam2", "configs", "sam2.1", "sam2.1_hiera_b+.yaml")
+CHECKPOINT = os.path.join(paths.checkpoint_dir, "SAM2_finetune", "SAM2_finetune.pkl")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-THR = 0.7 
+THR = 0.3
+data_module = AerialDeadTreeSegDataModule(
+    val_split=0.1, test_split=0.2, seed=42,
+    modality="rgb",  # in_channels=4. If modality is "merged", it will use 4 channels (RGB + NIR); Otherwise, it will use 3 channels (RGB).
+    batch_size=1,
+    num_workers=int(os.cpu_count() - 2) if os.cpu_count() is not None else 0,
+    target_size=IMAGE_SIZE
+)
+data_module.prepare_data()
+dataset_path = data_module.dataset_path
+
+RGB_DIR = os.path.join(dataset_path, "RGB_images")
+GT_DIR = os.path.join(dataset_path, "masks")
+result_dir = os.path.join(project_root, "outputs", "SAM2_ft_inference")
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir, exist_ok=True)
 
 # Loading model (structure + weights)
 def load_model(cfg_path, ckpt_path, device):
@@ -123,17 +144,25 @@ def main():
     IMAGE_SIZE = cfg.model.image_size
     img_tensor, gt_tensor, rgb_orig, gt_orig = preprocess_image(rgb_p, gt_p, IMAGE_SIZE)
 
+    # Create logger
+    logger = make_logger("inference", log_path=os.path.join(result_dir, "inference.log"), file_mode='w', show_level_name=True)
+
     # inference with timing
-    start_time = time.time()
+    start_time = datetime.now()
+    logger.info(f"Starting inference at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     pred_prob = infer_single(model, img_tensor)  
-    elapsed = time.time() - start_time
-    print(f"Inference time (single image): {elapsed:.4f} seconds")
+    elapsed = datetime.now() - start_time
+    logger.info(f"Inference completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"Inference time (single image): {elapsed.total_seconds():.4f} seconds")
 
     pred_prob_resized = cv2.resize(pred_prob, (rgb_orig.shape[1], rgb_orig.shape[0]), interpolation=cv2.INTER_LINEAR)
-    os.makedirs("inference_vis", exist_ok=True)
-    out_path = os.path.join("inference_vis", f"vis_{os.path.basename(rgb_p)}.png")
+    
+    # Save results
+    inference_vis_dir = os.path.join(result_dir, "inference_vis")
+    os.makedirs(inference_vis_dir, exist_ok=True)
+    out_path = os.path.join(inference_vis_dir, f"vis_{os.path.basename(rgb_p)}.png")
     visualize(rgb_orig, gt_orig, pred_prob_resized, thr=THR, save_path=out_path)
-    print(f"Saved visualization to {out_path}")
+    logger.info(f"Saved visualization to {out_path}")
 
 if __name__ == "__main__":
     main()

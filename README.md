@@ -63,7 +63,7 @@ CV9517_Group-Project/
 ├── models/                      # Directory for model scripts
 │   ├── __init__.py              # Init file for models module
 │   ├── smp_models_util.py       # Utility functions for models of Segmentation Models PyTorch
-│   └── u2net.py                 # Script for U2Net model
+│   └── u2net.py                 # Script for U2Net model for semantic segmentation
 ├── notebooks/                   # Directory for Jupyter notebooks (It is for simple demonstration and testing)
 │   └─ segmentation_models.ipynb # Notebook for testing Segmentation Models PyTorch
 ├── outputs/                     # Directory for output files (e.g., model predictions, evaluation logs)
@@ -71,6 +71,7 @@ CV9517_Group-Project/
 ├── scripts/                     # Directory for scripts
 │   ├── sam2_fine_tune.py        # Script for fine-tuning SAM2 model
 │   ├── sam2_ft_lightning.py     # Script for fine-tuning SAM2 model using PyTorch Lightning (Future work)
+│   ├── sam2_inference_vis.py    # Script for inference using SAM2 model (Visualize the results)
 │   ├── sam2_zero_shot.py        # Script for test zero-shot segmentation using SAM2
 │   ├── test_sam2_ft.py          # Script for testing fine-tuned SAM2 model
 │   ├── test_smp.py              # Script for testing Segmentation Models PyTorch model
