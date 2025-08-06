@@ -1,4 +1,6 @@
 # utils/paths.py
+# This script defines the paths used in the project, including data directories, log directories, and checkpoint directories.
+
 import os
 import sys
 

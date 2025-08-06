@@ -1,3 +1,7 @@
+# utils/callbacks.py
+# This script provides utility functions to create callbacks for PyTorch Lightning training and testing.
+# It includes progress bars, model summaries, learning rate monitoring, early stopping, and model checkpointing.
+
 import os
 from .paths import paths
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, RichProgressBar, RichModelSummary, Timer

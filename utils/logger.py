@@ -1,3 +1,7 @@
+# utils/logger.py
+# This script provides a utility function to create a logger with rich formatting for better readability.
+
+import os
 from rich.logging import RichHandler
 import logging
 
@@ -19,6 +23,8 @@ def make_logger(name, log_path, file_mode='a', show_level_name=False):
         logger.removeHandler(handler)
         
     rich_handler = RichHandler(show_time=False, rich_tracebacks=True, markup=True)
+    
+    # Create a file handler to log to a file
     file_handler = logging.FileHandler(log_path, mode=file_mode, encoding='utf-8')
 
     if show_level_name:
