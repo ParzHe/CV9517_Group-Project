@@ -51,8 +51,8 @@ CV9517_Group-Project/
 │   └── utils.py                 # Utility functions for data processing
 ├── datasplits                   # Directory for data splits csv files
 │   └── data_split_42_70_10.csv  # seed 42, train 70%, val 10%, test 20%
-├── gradio/                      # Directory for Gradio app scripts (Future work)
-│   └── app.py                   # Script for Gradio app (Future work)
+├── gradio/                      # Directory for Gradio app script
+│   └── app.py                   # Script for Gradio app (RGB modality only for now)
 ├── lighting_modules             # Directory for lightning modules
 │   ├── __init__.py              # Init file for lightning modules
 │   ├── sam2_module              # Script for SAM2 lightning module (Future work)
