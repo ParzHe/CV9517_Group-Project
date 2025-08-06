@@ -1,8 +1,8 @@
-import os
+# lightning_modules/u2net_module.py
+# （Future Work）
+# This module defines the U2Net model for semantic segmentation using PyTorch Lightning.
 
-import torch
 import lightning as L
-from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 from .segmentation_module import SegLitModule
 from models import U2net

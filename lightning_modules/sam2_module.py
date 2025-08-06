@@ -1,4 +1,7 @@
-import os
+# lightning_modules/sam2_module.py
+# (Future Work)
+# This module defines the SAM2 model for semantic segmentation using PyTorch Lightning.
+
 import random
 import torch
 import lightning as L

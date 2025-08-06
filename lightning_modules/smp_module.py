@@ -1,8 +1,7 @@
-import os
+# lightning_modules/smp_module.py
+# This module inherits from SegLitModule and is used for training Segmentation Models PyTorch (SMP) models with PyTorch Lightning.
 
-import torch
 import lightning as L
-from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 from .segmentation_module import SegLitModule
 

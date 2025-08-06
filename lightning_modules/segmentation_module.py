@@ -1,3 +1,6 @@
+# lightning_modules/segmentation_module.py
+# This module defines a base class for segmentation models using PyTorch Lightning, allowing for easy integration with various segmentation architectures.
+
 import torch
 import lightning as L
 from torch.optim import lr_scheduler
@@ -46,7 +49,16 @@ class SegLitModule(L.LightningModule):
 
     def _loss_fn(self, logits_mask, mask):
         """
-        Optimized loss function computation.
+        Loss function computation. It supports one or two loss functions based on the initialization.
+        Args:
+            logits_mask (torch.Tensor): The predicted mask logits.
+            mask (torch.Tensor): The ground truth mask.
+        
+        Returns:
+            torch.Tensor: Computed loss value.
+        
+        Raises:
+            AssertionError: If the shapes of logits_mask and mask do not match.
         """
     
         if logits_mask.shape != mask.shape:
