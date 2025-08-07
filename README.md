@@ -7,7 +7,7 @@ This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTor
 **Table of contents:**
 - [**COMP9517 Computer Vision 25T2 Group Project**](#comp9517-computer-vision-25t2-group-project)
   - [**0. Project Zotero Library**](#0-project-zotero-library)
-  - [**1. ProjectCode Structure**](#1-projectcode-structure)
+  - [**1. Project Files Structure**](#1-project-files-structure)
   - [**2. Setup Environment Instructions**](#2-setup-environment-instructions)
     - [2.1 Clone the repository](#21-clone-the-repository)
     - [2.2 Set up environment](#22-set-up-environment)
@@ -37,7 +37,7 @@ This project has a Zotero library that contains references to papers, articles, 
 
 [https://www.zotero.org/groups/6056458/cvers](https://www.zotero.org/groups/6056458/cvers)
 
-## **1. ProjectCode Structure**
+## **1. Project Files Structure**
 
 This project is organized into several directories and files, each serving a specific purpose. Below is an overview of the project structure:
 
