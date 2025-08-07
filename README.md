@@ -27,7 +27,8 @@ This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTor
     - [4.3 Testing](#43-testing)
       - [4.3.1 SMP (Segmentation Models PyTorch)](#431-smp-segmentation-models-pytorch)
       - [4.3.2 SAM2 (Zero-Shot Segmentation \& Fine-Tuning)](#432-sam2-zero-shot-segmentation--fine-tuning)
-  - [**5. Future Work**](#5-future-work)
+  - [**5. Gradio Demo**](#5-gradio-demo)
+  - [**6. Future Work**](#6-future-work)
 
 
 ## **0. Project Zotero Library**
@@ -326,10 +327,27 @@ python scripts/test_sam2_ft.py
 
 This script will load the fine-tuned SAM2 model and perform inference on the test dataset split. The results will be saved in the `outputs/sam2_ft_inference` directory.
 
-## **5. Future Work**
+## **5. Gradio Demo**
+
+To run the Gradio demo, you can use the following command:
+
+```bash
+conda activate CVers  # Activate the CVers environment
+python gradio/app.py
+```
+
+Then, you can open your web browser and go to `http://localhost:7860` to see the demo. The demo will allow you to upload an image and perform inference using the Segmentation Models Pytorch (SMP) models (SAM2 in the future work). The results will be displayed on the web page as following:
+
+![Gradio Demo](assets/gradio_demo.png)
+
+>[!NOTE]
+> 1. The Gradio demo is only supported for use local checkpoints, so you need to run the `scripts/train_smp.py` script to train the models and save the checkpoints in the `checkpoints/` directory before running the Gradio demo.
+> 2. The Gradio demo currently only supports the RGB modality. So, you need to use the RGB images from the dataset. The NRG and merged modalities will be supported in the future work.
+
+## **6. Future Work**
 
 We plan to implement the following features in the future:
 
-- **Gradio App**: We will develop a Gradio app to demonstrate the segmentation results of the trained models. The app will allow users to upload images and visualize the segmentation results in real-time.
 - **More Models**: We will add more models to the project, including U2Net and other segmentation models. This will help us to compare the performance of different models on the same dataset.
 - **SAM2 zero-shot with prompt**: We will explore the use of prompt techniques to improve the zero-shot segmentation capabilities of the SAM2 model in this task.
+- **Different Loss Functions**: We will experiment with different loss functions to improve the performance of the models. This includes trying out different combinations of loss functions and hyperparameters.
