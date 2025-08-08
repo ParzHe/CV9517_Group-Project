@@ -4,6 +4,8 @@ The goal of this group project is to develop and compare different deep learning
 
 This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org) and [![PyTorch Lightning](https://img.shields.io/badge/PyTorch_Lightning-2.5.2-792ee5?logo=lightning&logoColor=white&style=flat-square)](https://lightning.ai/docs/pytorch/stable/), and it includes over 60+ deep learning methods for semantic segmentation powered by [![Use](https://img.shields.io/badge/uses-segmentation__models.pytorch-blue?logo=github&style=flat-square)](https://github.com/qubvel-org/segmentation_models.pytorch). And, we also try zero-shot and fine-tuning with [![SAM2](https://img.shields.io/badge/uses-SAM2_by_Meta-black?logo=github&logoColor=white&style=flat-square)](https://github.com/facebookresearch/sam2) .
 
+The software demonstration [![Powered by Gradio](https://img.shields.io/badge/Powered%20by-Gradio-orange?logo=gradio)](https://www.gradio.app/).
+
 **Table of contents:**
 - [**COMP9517 Computer Vision 25T2 Group Project**](#comp9517-computer-vision-25t2-group-project)
   - [**0. Project Zotero Library**](#0-project-zotero-library)
@@ -29,7 +31,7 @@ This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTor
       - [4.3.2 SAM2 (Zero-Shot Segmentation \& Fine-Tuning)](#432-sam2-zero-shot-segmentation--fine-tuning)
   - [**5. Experimental Results**](#5-experimental-results)
     - [5.1 Metrics Description](#51-metrics-description)
-    - [5.2 Mean Metrics Table with different modalities (SMP)](#52-mean-metrics-table-with-different-modalities-smp)
+    - [5.2 Modality Mean Metrics (SMP)](#52-modality-mean-metrics-smp)
     - [5.3 Results Summary of Different Architectures](#53-results-summary-of-different-architectures)
     - [5.4 Results Summary of Different Feature Extractors (Encoders/Backbones)](#54-results-summary-of-different-feature-extractors-encodersbackbones)
   - [**6. Gradio Demo**](#6-gradio-demo)
@@ -346,7 +348,7 @@ This script will load the fine-tuned SAM2 model and perform inference on the tes
 - Specificity: True negative rate, ratio of true negative predictions to the total actual negatives
 - Test Time (Seconds): Time taken to perform inference on the test dataset
 
-### 5.2 Mean Metrics Table with different modalities (SMP)
+### 5.2 Modality Mean Metrics (SMP)
 
 | Metric        | RGB-NIR | NIR-RG | RGB    |
 | ------------- | ------- | ------ | ------ |
@@ -354,10 +356,13 @@ This script will load the fine-tuned SAM2 model and perform inference on the tes
 | Dataset IoU   | 0.4605  | 0.4379 | 0.4472 |
 | F1 Score      | 0.6020  | 0.5847 | 0.5847 |
 | F2 Score      | 0.6089  | 0.5938 | 0.5898 |
-| Precision     | 0.6235  | 0.6107 | 0.6038 |
+| Accuracy      | 0.9839  | 0.9830 | 0.9836 |
+| Precision     | 0.6342  | 0.6139 | 0.6239 |
 | Recall        | 0.6235  | 0.6107 | 0.6038 |
 | Sensitivity   | 0.6235  | 0.6107 | 0.6038 |
 | Specificity   | 0.9922  | 0.9918 | 0.9924 |
+
+The result is the mean of all the architectures and feature extractors tested on the RGB-NIR, NIR-RG, and RGB modalities.
 
 ### 5.3 Results Summary of Different Architectures
 
@@ -390,6 +395,8 @@ This script will load the fine-tuned SAM2 model and perform inference on the tes
   </tbody>
 </table>
 
+The result is the mean of all the feature extractors with all three modalities tested on the different architectures. The `Unet with scse` architecture is a modified version of the `Unet` architecture with Squeeze-and-Excitation (SE) blocks on decoder.
+
 ### 5.4 Results Summary of Different Feature Extractors (Encoders/Backbones)
 
 <table>
@@ -417,6 +424,7 @@ This script will load the fine-tuned SAM2 model and perform inference on the tes
   </tbody>
 </table>
 
+The result is the mean of all the architectures with all three modalities tested on the different feature extractors. The `MixViT-b2` is a modified version of the `Mix Vision Transformer (MixViT)` with a smaller size.
 
 ## **6. Gradio Demo**
 

@@ -180,14 +180,15 @@ def run_test():
         # Display summary statistics
         main_log.info("\n[bold]Test Results Summary of modalities:[/bold]")
         main_log.info(df.groupby(['Modality']).agg({
-            'Per_Image_IoU': ['mean', 'std', 'max'],
-            'Dataset_IoU': ['mean', 'std', 'max'],
-            'F1_Score': ['mean', 'std', 'max'],
-            'F2_Score': ['mean', 'std', 'max'],
-            'Precision': ['mean', 'std', 'max'],
-            'Recall': ['mean', 'std', 'max'],
-            'Sensitivity': ['mean', 'std', 'max'],
-            'Specificity': ['mean', 'std', 'max'],
+            'Per_Image_IoU': ['mean', 'max'],
+            'Dataset_IoU': ['mean', 'max'],
+            'F1_Score': ['mean', 'max'],
+            'F2_Score': ['mean', 'max'],
+            'Accuracy': ['mean', 'max'],
+            'Precision': ['mean', 'max'],
+            'Recall': ['mean', 'max'],
+            'Sensitivity': ['mean', 'max'],
+            'Specificity': ['mean', 'max'],
         }).round(4))
 
         main_log.info("\n[bold]Test Results Summary of architectures:[/bold]")
