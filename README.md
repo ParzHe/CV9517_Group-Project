@@ -342,6 +342,7 @@ This script will load the fine-tuned SAM2 model and perform inference on the tes
 - Dataset IoU: IoU calculated on the whole dataset
 - F1 Score: Harmonic mean of precision and recall
 - F2 Score: Harmonic mean of precision and recall with more emphasis on recall
+- Accuracy: Ratio of correct pixel predictions to the total predictions
 - Precision: Ratio of true positive predictions to the total predicted positives
 - Recall: Ratio of true positive predictions to the total actual positives
 - Sensitivity: True positive rate, same as recall
