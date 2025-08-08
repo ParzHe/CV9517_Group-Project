@@ -27,8 +27,13 @@ This project is implemented using [![PyTorch](https://img.shields.io/badge/PyTor
     - [4.3 Testing](#43-testing)
       - [4.3.1 SMP (Segmentation Models PyTorch)](#431-smp-segmentation-models-pytorch)
       - [4.3.2 SAM2 (Zero-Shot Segmentation \& Fine-Tuning)](#432-sam2-zero-shot-segmentation--fine-tuning)
-  - [**5. Gradio Demo**](#5-gradio-demo)
-  - [**6. Future Work**](#6-future-work)
+  - [**5. Experimental Results**](#5-experimental-results)
+    - [5.1 Metrics Description](#51-metrics-description)
+    - [5.2 Mean Metrics Table with different modalities (SMP)](#52-mean-metrics-table-with-different-modalities-smp)
+    - [5.3 Results Summary of Different Architectures](#53-results-summary-of-different-architectures)
+    - [5.4 Results Summary of Different Feature Extractors (Encoders/Backbones)](#54-results-summary-of-different-feature-extractors-encodersbackbones)
+  - [**6. Gradio Demo**](#6-gradio-demo)
+  - [**7. Future Work**](#7-future-work)
 
 
 ## **0. Project Zotero Library**
@@ -327,7 +332,93 @@ python scripts/test_sam2_ft.py
 
 This script will load the fine-tuned SAM2 model and perform inference on the test dataset split. The results will be saved in the `outputs/sam2_ft_inference` directory.
 
-## **5. Gradio Demo**
+## **5. Experimental Results**
+
+### 5.1 Metrics Description
+
+- Per Image IoU: Image-by-image calculation IoU and then average
+- Dataset IoU: IoU calculated on the whole dataset
+- F1 Score: Harmonic mean of precision and recall
+- F2 Score: Harmonic mean of precision and recall with more emphasis on recall
+- Precision: Ratio of true positive predictions to the total predicted positives
+- Recall: Ratio of true positive predictions to the total actual positives
+- Sensitivity: True positive rate, same as recall
+- Specificity: True negative rate, ratio of true negative predictions to the total actual negatives
+- Test Time (Seconds): Time taken to perform inference on the test dataset
+
+### 5.2 Mean Metrics Table with different modalities (SMP)
+
+| Metric        | RGB-NIR | NIR-RG | RGB    |
+| ------------- | ------- | ------ | ------ |
+| Per Image IoU | 0.4481  | 0.4290 | 0.4334 |
+| Dataset IoU   | 0.4605  | 0.4379 | 0.4472 |
+| F1 Score      | 0.6020  | 0.5847 | 0.5847 |
+| F2 Score      | 0.6089  | 0.5938 | 0.5898 |
+| Precision     | 0.6235  | 0.6107 | 0.6038 |
+| Recall        | 0.6235  | 0.6107 | 0.6038 |
+| Sensitivity   | 0.6235  | 0.6107 | 0.6038 |
+| Specificity   | 0.9922  | 0.9918 | 0.9924 |
+
+### 5.3 Results Summary of Different Architectures
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Architecture</th>
+      <th colspan="2">Per Image IoU</th>
+      <th colspan="2">Dataset IoU</th>
+      <th colspan="2">Test Time (Seconds)</th>
+    </tr>
+    <tr>
+      <th>mean</th><th>max</th>
+      <th>mean</th><th>max</th>
+      <th>mean</th><th>max</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>DeepLabV3</td><td>0.4216</td><td>0.4505</td><td>0.4358</td><td>0.4602</td><td>3.0977</td><td>5.7786</td></tr>
+    <tr><td>DeepLabV3Plus</td><td>0.4199</td><td>0.4528</td><td>0.4324</td><td>0.4655</td><td>2.5329</td><td>3.7419</td></tr>
+    <tr><td>FPN</td><td>0.4469</td><td>0.4759</td><td>0.4562</td><td>0.4911</td><td>2.7698</td><td>3.8235</td></tr>
+    <tr><td>Linknet</td><td>0.4272</td><td>0.4719</td><td>0.4400</td><td>0.4861</td><td>2.8194</td><td>4.2640</td></tr>
+    <tr><td>PAN</td><td>0.4427</td><td>0.4624</td><td>0.4538</td><td>0.4762</td><td>4.9664</td><td>37.4820</td></tr>
+    <tr><td>PSPNet</td><td>0.4202</td><td>0.4410</td><td>0.4369</td><td>0.4580</td><td>1.8923</td><td>3.0223</td></tr>
+    <tr><td>Segformer</td><td>0.4409</td><td>0.4630</td><td>0.4525</td><td>0.4802</td><td>2.6860</td><td>4.1915</td></tr>
+    <tr><td>UPerNet</td><td>0.4488</td><td>0.4742</td><td>0.4577</td><td>0.4812</td><td>2.8821</td><td>4.2409</td></tr>
+    <tr><td>Unet</td><td>0.4400</td><td>0.4810</td><td>0.4503</td><td>0.4930</td><td>2.8149</td><td>3.8503</td></tr>
+    <tr><td>Unet++</td><td>0.4497</td><td>0.4807</td><td>0.4587</td><td>0.4970</td><td>3.5455</td><td>5.4500</td></tr>
+    <tr><td>Unet with scse</td><td>0.4441</td><td>0.4790</td><td>0.4567</td><td>0.4959</td><td>3.1273</td><td>4.1764</td></tr>
+  </tbody>
+</table>
+
+### 5.4 Results Summary of Different Feature Extractors (Encoders/Backbones)
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Backbone</th>
+      <th colspan="2">Per Image IoU</th>
+      <th colspan="2">Dataset IoU</th>
+      <th colspan="2">Test Time (Seconds)</th>
+    </tr>
+    <tr>
+      <th>mean</th><th>max</th>
+      <th>mean</th><th>max</th>
+      <th>mean</th><th>max</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Densenet-161</td><td>0.4292</td><td>0.4546</td><td>0.4391</td><td>0.4745</td><td>3.7932</td><td>5.4500</td></tr>
+    <tr><td>EfficientNet-b5</td><td>0.4521</td><td>0.4810</td><td>0.4658</td><td>0.4970</td><td>4.8207</td><td>37.4820</td></tr>
+    <tr><td>MixViT-b2</td><td>0.4354</td><td>0.4759</td><td>0.4442</td><td>0.4911</td><td>3.1613</td><td>5.7786</td></tr>
+    <tr><td>Resnet50</td><td>0.4243</td><td>0.4580</td><td>0.4366</td><td>0.4762</td><td>2.1381</td><td>3.1704</td></tr>
+    <tr><td>ResneXt50_32x4d</td><td>0.4320</td><td>0.4696</td><td>0.4427</td><td>0.4794</td><td>2.3084</td><td>9.5732</td></tr>
+    <tr><td>SE-Resnet50</td><td>0.4397</td><td>0.4781</td><td>0.4532</td><td>0.4835</td><td>2.4685</td><td>3.2726</td></tr>
+    <tr><td>SE-ResneXt50_32x4d</td><td>0.4428</td><td>0.4686</td><td>0.4549</td><td>0.4812</td><td>2.4627</td><td>3.2390</td></tr>
+  </tbody>
+</table>
+
+
+## **6. Gradio Demo**
 
 To run the Gradio demo, you can use the following command:
 
@@ -344,7 +435,7 @@ Then, you can open your web browser and go to `http://localhost:7860` to see the
 > 1. The Gradio demo is only supported for use local checkpoints, so you need to run the `scripts/train_smp.py` script to train the models and save the checkpoints in the `checkpoints/` directory before running the Gradio demo.
 > 2. The Gradio demo currently only supports the RGB modality. So, you need to use the RGB images from the dataset. The NRG and merged modalities will be supported in the future work.
 
-## **6. Future Work**
+## **7. Future Work**
 
 We plan to implement the following features in the future:
 
