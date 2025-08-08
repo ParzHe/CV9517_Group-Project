@@ -50,6 +50,7 @@ This project is organized into several directories and files, each serving a spe
 
 ```plaintext
 CV9517_Group-Project/
+├── assets/                      # Directory for assets (e.g., images, icons)
 ├── checkpoints/                 # Directory for model checkpoints (Local storage)
 ├── data/                        # Directory for data processing scripts
 │   ├── __init__.py              # Init file for data processing module
