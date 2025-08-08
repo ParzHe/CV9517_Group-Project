@@ -182,6 +182,12 @@ def run_test():
         main_log.info(df.groupby(['Modality']).agg({
             'Per_Image_IoU': ['mean', 'std', 'max'],
             'Dataset_IoU': ['mean', 'std', 'max'],
+            'F1_Score': ['mean', 'std', 'max'],
+            'F2_Score': ['mean', 'std', 'max'],
+            'Precision': ['mean', 'std', 'max'],
+            'Recall': ['mean', 'std', 'max'],
+            'Sensitivity': ['mean', 'std', 'max'],
+            'Specificity': ['mean', 'std', 'max'],
         }).round(4))
 
         main_log.info("\n[bold]Test Results Summary of architectures:[/bold]")
